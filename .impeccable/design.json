@@ -1,0 +1,446 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-18T14:18:39.834Z",
+  "title": "Design System: PanoPDF",
+  "extensions": {
+    "colorMeta": {
+      "surface": {
+        "role": "neutral",
+        "displayName": "白色工具面",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      },
+      "surface-subtle": {
+        "role": "neutral",
+        "displayName": "浅灰辅助面",
+        "tonalRamp": [
+          "oklch(15.00% 0.00171 247.84)",
+          "oklch(26.43% 0.00171 247.84)",
+          "oklch(37.86% 0.00171 247.84)",
+          "oklch(49.29% 0.00171 247.84)",
+          "oklch(60.71% 0.00171 247.84)",
+          "oklch(72.14% 0.00171 247.84)",
+          "oklch(83.57% 0.00171 247.84)",
+          "oklch(95.00% 0.00171 247.84)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "空态灰底",
+        "tonalRamp": [
+          "oklch(15.00% 0.00460 258.33)",
+          "oklch(26.43% 0.00460 258.33)",
+          "oklch(37.86% 0.00460 258.33)",
+          "oklch(49.29% 0.00460 258.33)",
+          "oklch(60.71% 0.00460 258.33)",
+          "oklch(72.14% 0.00460 258.33)",
+          "oklch(83.57% 0.00460 258.33)",
+          "oklch(95.00% 0.00460 258.33)"
+        ]
+      },
+      "reader-canvas": {
+        "role": "neutral",
+        "displayName": "阅读灰底",
+        "tonalRamp": [
+          "oklch(15.00% 0.00580 264.53)",
+          "oklch(26.43% 0.00580 264.53)",
+          "oklch(37.86% 0.00580 264.53)",
+          "oklch(49.29% 0.00580 264.53)",
+          "oklch(60.71% 0.00580 264.53)",
+          "oklch(72.14% 0.00580 264.53)",
+          "oklch(83.57% 0.00580 264.53)",
+          "oklch(95.00% 0.00580 264.53)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "深灰正文",
+        "tonalRamp": [
+          "oklch(15.00% 0.01590 264.27)",
+          "oklch(26.43% 0.01590 264.27)",
+          "oklch(37.86% 0.01590 264.27)",
+          "oklch(49.29% 0.01590 264.27)",
+          "oklch(60.71% 0.01590 264.27)",
+          "oklch(72.14% 0.01590 264.27)",
+          "oklch(83.57% 0.01590 264.27)",
+          "oklch(95.00% 0.01590 264.27)"
+        ]
+      },
+      "text-muted": {
+        "role": "neutral",
+        "displayName": "次要灰字",
+        "tonalRamp": [
+          "oklch(15.00% 0.01963 259.42)",
+          "oklch(26.43% 0.01963 259.42)",
+          "oklch(37.86% 0.01963 259.42)",
+          "oklch(49.29% 0.01963 259.42)",
+          "oklch(60.71% 0.01963 259.42)",
+          "oklch(72.14% 0.01963 259.42)",
+          "oklch(83.57% 0.01963 259.42)",
+          "oklch(95.00% 0.01963 259.42)"
+        ]
+      },
+      "text-disabled": {
+        "role": "neutral",
+        "displayName": "禁用灰字",
+        "tonalRamp": [
+          "oklch(15.00% 0.01615 254.67)",
+          "oklch(26.43% 0.01615 254.67)",
+          "oklch(37.86% 0.01615 254.67)",
+          "oklch(49.29% 0.01615 254.67)",
+          "oklch(60.71% 0.01615 254.67)",
+          "oklch(72.14% 0.01615 254.67)",
+          "oklch(83.57% 0.01615 254.67)",
+          "oklch(95.00% 0.01615 254.67)"
+        ]
+      },
+      "border": {
+        "role": "neutral",
+        "displayName": "控件分界灰",
+        "tonalRamp": [
+          "oklch(15.00% 0.00941 258.34)",
+          "oklch(26.43% 0.00941 258.34)",
+          "oklch(37.86% 0.00941 258.34)",
+          "oklch(49.29% 0.00941 258.34)",
+          "oklch(60.71% 0.00941 258.34)",
+          "oklch(72.14% 0.00941 258.34)",
+          "oklch(83.57% 0.00941 258.34)",
+          "oklch(95.00% 0.00941 258.34)"
+        ]
+      },
+      "border-subtle": {
+        "role": "neutral",
+        "displayName": "轻分界灰",
+        "tonalRamp": [
+          "oklch(15.00% 0.00633 255.48)",
+          "oklch(26.43% 0.00633 255.48)",
+          "oklch(37.86% 0.00633 255.48)",
+          "oklch(49.29% 0.00633 255.48)",
+          "oklch(60.71% 0.00633 255.48)",
+          "oklch(72.14% 0.00633 255.48)",
+          "oklch(83.57% 0.00633 255.48)",
+          "oklch(95.00% 0.00633 255.48)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "操作蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.15184 256.80)",
+          "oklch(26.43% 0.15184 256.80)",
+          "oklch(37.86% 0.15184 256.80)",
+          "oklch(49.29% 0.15184 256.80)",
+          "oklch(60.71% 0.15184 256.80)",
+          "oklch(72.14% 0.15184 256.80)",
+          "oklch(83.57% 0.15184 256.80)",
+          "oklch(95.00% 0.15184 256.80)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "悬停深蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.13164 257.07)",
+          "oklch(26.43% 0.13164 257.07)",
+          "oklch(37.86% 0.13164 257.07)",
+          "oklch(49.29% 0.13164 257.07)",
+          "oklch(60.71% 0.13164 257.07)",
+          "oklch(72.14% 0.13164 257.07)",
+          "oklch(83.57% 0.13164 257.07)",
+          "oklch(95.00% 0.13164 257.07)"
+        ]
+      },
+      "accent-pressed": {
+        "role": "primary",
+        "displayName": "按下深蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.11336 257.83)",
+          "oklch(26.43% 0.11336 257.83)",
+          "oklch(37.86% 0.11336 257.83)",
+          "oklch(49.29% 0.11336 257.83)",
+          "oklch(60.71% 0.11336 257.83)",
+          "oklch(72.14% 0.11336 257.83)",
+          "oklch(83.57% 0.11336 257.83)",
+          "oklch(95.00% 0.11336 257.83)"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "浅蓝选中面",
+        "tonalRamp": [
+          "oklch(15.00% 0.01830 258.35)",
+          "oklch(26.43% 0.01830 258.35)",
+          "oklch(37.86% 0.01830 258.35)",
+          "oklch(49.29% 0.01830 258.35)",
+          "oklch(60.71% 0.01830 258.35)",
+          "oklch(72.14% 0.01830 258.35)",
+          "oklch(83.57% 0.01830 258.35)",
+          "oklch(95.00% 0.01830 258.35)"
+        ]
+      },
+      "on-accent": {
+        "role": "primary",
+        "displayName": "反白文字",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      },
+      "hover": {
+        "role": "neutral",
+        "displayName": "悬停灰面",
+        "tonalRamp": [
+          "oklch(15.00% 0.00457 258.32)",
+          "oklch(26.43% 0.00457 258.32)",
+          "oklch(37.86% 0.00457 258.32)",
+          "oklch(49.29% 0.00457 258.32)",
+          "oklch(60.71% 0.00457 258.32)",
+          "oklch(72.14% 0.00457 258.32)",
+          "oklch(83.57% 0.00457 258.32)",
+          "oklch(95.00% 0.00457 258.32)"
+        ]
+      },
+      "pressed": {
+        "role": "neutral",
+        "displayName": "按下灰面",
+        "tonalRamp": [
+          "oklch(15.00% 0.00808 253.86)",
+          "oklch(26.43% 0.00808 253.86)",
+          "oklch(37.86% 0.00808 253.86)",
+          "oklch(49.29% 0.00808 253.86)",
+          "oklch(60.71% 0.00808 253.86)",
+          "oklch(72.14% 0.00808 253.86)",
+          "oklch(83.57% 0.00808 253.86)",
+          "oklch(95.00% 0.00808 253.86)"
+        ]
+      },
+      "error": {
+        "role": "error",
+        "displayName": "错误红",
+        "tonalRamp": [
+          "oklch(15.00% 0.15861 25.61)",
+          "oklch(26.43% 0.15861 25.61)",
+          "oklch(37.86% 0.15861 25.61)",
+          "oklch(49.29% 0.15861 25.61)",
+          "oklch(60.71% 0.15861 25.61)",
+          "oklch(72.14% 0.15861 25.61)",
+          "oklch(83.57% 0.15861 25.61)",
+          "oklch(95.00% 0.15861 25.61)"
+        ]
+      },
+      "error-surface": {
+        "role": "error",
+        "displayName": "错误浅红面",
+        "tonalRamp": [
+          "oklch(15.00% 0.01541 27.28)",
+          "oklch(26.43% 0.01541 27.28)",
+          "oklch(37.86% 0.01541 27.28)",
+          "oklch(49.29% 0.01541 27.28)",
+          "oklch(60.71% 0.01541 27.28)",
+          "oklch(72.14% 0.01541 27.28)",
+          "oklch(83.57% 0.01541 27.28)",
+          "oklch(95.00% 0.01541 27.28)"
+        ]
+      },
+      "backdrop": {
+        "role": "neutral",
+        "displayName": "模态遮罩灰",
+        "tonalRamp": [
+          "oklch(15.00% 0.01961 258.35 / 36%)",
+          "oklch(26.43% 0.01961 258.35 / 36%)",
+          "oklch(37.86% 0.01961 258.35 / 36%)",
+          "oklch(49.29% 0.01961 258.35 / 36%)",
+          "oklch(60.71% 0.01961 258.35 / 36%)",
+          "oklch(72.14% 0.01961 258.35 / 36%)",
+          "oklch(83.57% 0.01961 258.35 / 36%)",
+          "oklch(95.00% 0.01961 258.35 / 36%)"
+        ]
+      },
+      "focus": {
+        "role": "primary",
+        "displayName": "外壳焦点蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.15242 256.29)",
+          "oklch(26.43% 0.15242 256.29)",
+          "oklch(37.86% 0.15242 256.29)",
+          "oklch(49.29% 0.15242 256.29)",
+          "oklch(60.71% 0.15242 256.29)",
+          "oklch(72.14% 0.15242 256.29)",
+          "oklch(83.57% 0.15242 256.29)",
+          "oklch(95.00% 0.15242 256.29)"
+        ]
+      },
+      "reader-focus": {
+        "role": "primary",
+        "displayName": "阅读焦点蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.18277 259.68)",
+          "oklch(26.43% 0.18277 259.68)",
+          "oklch(37.86% 0.18277 259.68)",
+          "oklch(49.29% 0.18277 259.68)",
+          "oklch(60.71% 0.18277 259.68)",
+          "oklch(72.14% 0.18277 259.68)",
+          "oklch(83.57% 0.18277 259.68)",
+          "oklch(95.00% 0.18277 259.68)"
+        ]
+      },
+      "selection": {
+        "role": "primary",
+        "displayName": "文本选区蓝",
+        "tonalRamp": [
+          "oklch(15.00% 0.04668 255.37)",
+          "oklch(26.43% 0.04668 255.37)",
+          "oklch(37.86% 0.04668 255.37)",
+          "oklch(49.29% 0.04668 255.37)",
+          "oklch(60.71% 0.04668 255.37)",
+          "oklch(72.14% 0.04668 255.37)",
+          "oklch(83.57% 0.04668 255.37)",
+          "oklch(95.00% 0.04668 255.37)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "空态产品名",
+        "purpose": "紧凑产品标识，不作营销展示标题。"
+      },
+      "title": {
+        "displayName": "状态标题",
+        "purpose": "密码、加载与错误状态。"
+      },
+      "body": {
+        "displayName": "正文与控件",
+        "purpose": "应用外壳的常规文字，不覆盖 PDF。"
+      },
+      "label": {
+        "displayName": "字段标签",
+        "purpose": "字段标签与文件名。"
+      },
+      "caption": {
+        "displayName": "辅助文字",
+        "purpose": "状态栏与本地文件说明。"
+      }
+    },
+    "shadows": [
+      {
+        "name": "pdf-page",
+        "value": "0 1px 4px rgb(20 30 45 / 18%)",
+        "purpose": "仅分离 PDF 白纸与阅读底；来源 src/reader.css。"
+      }
+    ],
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "compact-desktop",
+        "value": "1100px"
+      },
+      {
+        "name": "narrow-desktop",
+        "value": "850px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "主要按钮",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "密码弹窗等任务中的确认操作，使用现有蓝色状态。",
+      "html": "<button class=\"ds-primary\" type=\"button\">打开文档</button>",
+      "css": ".ds-primary { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); background: var(--accent, #195db3); border-color: var(--accent, #195db3); color: var(--on-accent, #ffffff); } .ds-primary:hover:not(:disabled) { background: var(--accent-hover, #124a92); border-color: var(--accent-hover, #124a92); } .ds-primary:active:not(:disabled) { background: var(--accent-pressed, #0d3975); } .ds-primary:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-primary:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; }"
+    },
+    {
+      "name": "普通按钮",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "取消或返回等次要操作。",
+      "html": "<button class=\"ds-secondary\" type=\"button\">取消</button>",
+      "css": ".ds-secondary { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); } .ds-secondary:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-secondary:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-secondary:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-secondary:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; }"
+    },
+    {
+      "name": "图标按钮",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "工具栏搜索入口；SVG 路径直接取自 src/icons.ts。",
+      "html": "<button class=\"ds-icon-button\" type=\"button\" aria-label=\"搜索文档\" title=\"搜索文档\"><svg class=\"ds-icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"m16 16 5 5\"/></svg></button>",
+      "css": ".ds-icon-button { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); width: 32px; height: 32px; padding: 6px; border-color: transparent; background: transparent; flex: 0 0 auto; } .ds-icon { width: 18px; height: 18px; flex: 0 0 auto; } .ds-icon-button:disabled .ds-icon { opacity: .65; } .ds-icon-button:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-icon-button:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-icon-button:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-icon-button:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; } .ds-icon-button[aria-expanded=\"true\"] { background: var(--accent-soft, #e8f0fc); color: var(--accent, #195db3); }"
+    },
+    {
+      "name": "搜索输入",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "有标签的单行搜索字段；包含焦点、placeholder、选区及错误状态。",
+      "html": "<label class=\"ds-field-label\" for=\"ds-search\">在文档中查找</label><input class=\"ds-input\" id=\"ds-search\" type=\"search\" placeholder=\"输入文字\" autocomplete=\"off\" spellcheck=\"false\" />",
+      "css": ".ds-field-label { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); display: block; margin-bottom: 8px; font-weight: 550; color: var(--text, #242830); } .ds-input { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); min-width: 0; width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); caret-color: var(--accent, #195db3); } .ds-input::placeholder { color: var(--text-muted, #5b626d); opacity: 1; } .ds-input:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 0; } .ds-input[aria-invalid=\"true\"] { border-color: var(--error, #a32929); } .ds-input:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); } .ds-input::selection { background: var(--selection, #c3d9f6); color: var(--text, #242830); }"
+    },
+    {
+      "name": "导航标签",
+      "kind": "nav",
+      "refersTo": "navigation-selected",
+      "description": "目录与搜索共享的导航标签；样例仅呈现外观，不宣称包含应用切换逻辑。",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\" aria-label=\"导航方式\"><button class=\"ds-tab\" type=\"button\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">目录</button><button class=\"ds-tab\" type=\"button\" role=\"tab\" aria-selected=\"true\">搜索</button></div>",
+      "css": ".ds-tabs { display: flex; gap: 4px; } .ds-tab { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); min-width: 64px; border-color: transparent; } .ds-tab:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-tab:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-tab:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-tab:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; } .ds-tab[aria-selected=\"true\"] { background: var(--accent-soft, #e8f0fc); color: var(--accent, #195db3); }"
+    },
+    {
+      "name": "PDF 纸面",
+      "kind": "custom",
+      "refersTo": "pdf-page",
+      "description": "白纸与阅读背景的材质示意；示例尺寸仅供面板预览，不是固定 PDF 尺寸。",
+      "html": "<div class=\"ds-reader-sample\"><div class=\"ds-paper-sample\" role=\"img\" aria-label=\"PDF 白纸材质示意，不含文档内容\"></div></div>",
+      "css": ".ds-reader-sample { padding: 16px; background: #e7e9ed; } .ds-paper-sample { width: 160px; height: 226px; background: #fff; border: none; box-shadow: 0 1px 4px rgb(20 30 45 / 18%); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "把 PDF 铺开读。",
+    "overview": "PanoPDF 的界面是阅读工具，不是展示页面。用户已批准紧凑工具栏、可收起导航、浅灰阅读背景与系统字体；设计用清楚的分组、稳定的控件尺寸和少量蓝色强调支持阅读，不另创品牌主题。\n\n默认平坦、紧凑、少装饰。白色工具面与灰色阅读底区分操作和内容，PDF 保留自身排版。系统字体随桌面平台变化，不追求不同操作系统逐像素一致。",
+    "keyCharacteristics": [
+      "内容优先，工具占据有限空间。",
+      "白色工具面、冷中性浅灰底、单一蓝色操作强调。",
+      "系统字体、小圆角、明确焦点与错误提示。",
+      "桌面窗口可收缩，工具栏按分组换行。"
+    ],
+    "rules": [
+      {
+        "name": "单一强调",
+        "body": "新增外壳控件复用操作蓝及中性色，不因为功能增加而发明新的主题色。",
+        "section": "colors"
+      },
+      {
+        "name": "外壳与文档分离",
+        "body": "外壳字号和字体只管理应用 UI；PDF 的文字层、页面和链接由阅读引擎保留自身规则。",
+        "section": "typography"
+      },
+      {
+        "name": "平坦工具面",
+        "body": "不把工具组、搜索区和空态包装成悬浮卡片；阴影用于分离 PDF 纸页与阅读底。",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** 保持系统字体、紧凑控件与分组换行，让 PDF 保持主要空间。",
+      "**Do** 复用已有颜色、焦点及错误状态；明确区分外壳和 PDF 引擎样式。",
+      "**Do** 同时记录空态灰底与阅读灰底的真实差异，不把文档当作静默重构。",
+      "**Do** 保留窄桌面窗口的主要操作，必要时换行并收起导航。"
+    ],
+    "donts": [
+      "**Don't** 加入未经批准的深色主题、展示字体、渐变、玻璃或装饰动画。",
+      "**Don't** 将工具组变成营销卡片，或用假文档、假指标填充空态。",
+      "**Don't** 用应用字体覆盖 PDF 内容，或以固定同屏页数替代自由缩放。",
+      "**Don't** 将内部方向合同、seed 或审查元数据加入浏览器产物。"
+    ]
+  }
+}

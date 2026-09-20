@@ -1,0 +1,41 @@
+{
+  "name": "panopdf",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "bun@1.4.0",
+  "trustedDependencies": ["electron", "electron-winstaller"],
+  "description": "A panoramic desktop PDF reader",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "bun scripts/dev.mjs",
+    "dev:web": "vite --host 127.0.0.1",
+    "build": "tsc --noEmit && vite build",
+    "start": "electron .",
+    "test": "bun test",
+    "test:e2e": "playwright test",
+    "dist": "bun run build && electron-builder"
+  },
+  "dependencies": {
+    "pdfjs-dist": "6.3.289"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^24.0.0",
+    "electron": "44.4.2",
+    "electron-builder": "^26.0.12",
+    "pdf-lib": "^1.17.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0"
+  },
+  "build": {
+    "appId": "com.panopdf.reader",
+    "productName": "PanoPDF",
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "electron/**/*", "package.json"],
+    "mac": { "target": ["dmg", "zip"], "category": "public.app-category.productivity" },
+    "win": { "target": ["nsis"] },
+    "linux": { "target": ["AppImage"], "category": "Office" },
+    "fileAssociations": [{ "ext": "pdf", "name": "PDF document", "role": "Viewer" }]
+  }
+}

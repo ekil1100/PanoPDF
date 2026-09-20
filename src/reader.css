@@ -1,0 +1,74 @@
+/* The UI owns the positioned outer shell; this is PDFViewer's scrollport. */
+#viewerContainer {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  overflow-anchor: none;
+  scroll-behavior: auto;
+  scroll-snap-type: none;
+  background: #e7e9ed;
+  color-scheme: light;
+  direction: ltr;
+  touch-action: pan-x pan-y;
+}
+
+#viewerContainer:focus-visible {
+  outline: 2px solid #165dca;
+  outline-offset: -2px;
+}
+
+#viewerContainer #viewer {
+  --page-bg-color: #fff;
+  box-sizing: border-box;
+  position: relative;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  margin: 0;
+  padding: 16px;
+  gap: 16px;
+  text-align: start;
+  white-space: normal;
+}
+
+#viewerContainer[data-layout="horizontal"] #viewer {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+}
+
+#viewerContainer[data-layout="vertical"] #viewer {
+  display: grid;
+  grid-template-columns: repeat(var(--reader-columns, 1), max-content);
+  align-items: start;
+  align-content: start;
+}
+
+#viewerContainer #viewer .page {
+  display: block;
+  flex: none;
+  margin: 0;
+  border: none;
+  box-shadow: 0 1px 4px rgb(20 30 45 / 18%);
+}
+
+/* Center each short page against the viewport, not the tallest sibling. */
+#viewerContainer[data-layout="horizontal"] #viewer .page {
+  margin-top: max(0px, calc((var(--reader-viewport-height, 0px) - 32px - var(--reader-page-height, 0px)) / 2));
+}
+
+#viewerContainer #viewer .textLayer {
+  caret-color: #165dca;
+}
+
+#viewerContainer #viewer a:focus-visible {
+  outline: 2px solid #165dca;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #viewerContainer {
+    scroll-behavior: auto;
+  }
+}

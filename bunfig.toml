@@ -1,0 +1,4 @@
+[test]
+root = "./tests"
+# Playwright owns Electron integration tests; keep them out of Bun discovery.
+pathIgnorePatterns = ["**/e2e/**"]

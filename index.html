@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data: blob:; img-src 'self' data: blob:; connect-src 'self' http://localhost:* http://127.0.0.1:* ws://localhost:* ws://127.0.0.1:*; object-src 'none'; base-uri 'self'; form-action 'none'" />
+    <meta name="color-scheme" content="light" />
+    <title>PanoPDF</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="app-header" aria-label="阅读工具">
+        <div class="document-bar">
+          <button id="openFile" class="text-button" type="button" title="打开 PDF" data-icon="open"><span>打开</span></button>
+          <span class="divider" aria-hidden="true"></span>
+          <span id="filename" class="filename">PanoPDF</span>
+          <button id="closeFile" class="icon-button" type="button" aria-label="关闭文档" title="关闭文档" data-icon="close" disabled></button>
+        </div>
+        <div class="reader-toolbar" aria-label="文档操作">
+          <div class="control-group">
+            <button id="outlineToggle" class="icon-button" type="button" aria-label="文档目录" title="文档目录" aria-controls="sidebar" aria-expanded="false" data-icon="outline" data-reader disabled></button>
+            <button id="searchToggle" class="icon-button" type="button" aria-label="搜索文档" title="搜索文档" aria-controls="sidebar" aria-expanded="false" data-icon="search" data-reader disabled></button>
+          </div>
+          <span class="divider" aria-hidden="true"></span>
+          <div class="control-group page-controls">
+            <button id="previousPage" class="icon-button" type="button" aria-label="上一页" title="上一页" data-icon="previous" data-reader disabled></button>
+            <label class="sr-only" for="pageNumber">页码</label>
+            <input id="pageNumber" class="number-input page-input" type="text" inputmode="numeric" value="—" autocomplete="off" data-reader disabled />
+            <span id="pageTotal" class="page-total" aria-label="总页数">/ —</span>
+            <button id="nextPage" class="icon-button" type="button" aria-label="下一页" title="下一页" data-icon="next" data-reader disabled></button>
+          </div>
+          <span class="divider" aria-hidden="true"></span>
+          <div class="control-group zoom-controls">
+            <button id="zoomOut" class="icon-button" type="button" aria-label="缩小" title="缩小" data-icon="minus" data-reader disabled></button>
+            <label class="sr-only" for="zoomPercent">缩放百分比</label>
+            <input id="zoomPercent" class="number-input zoom-input" type="text" inputmode="decimal" value="100%" autocomplete="off" data-reader disabled />
+            <button id="zoomIn" class="icon-button" type="button" aria-label="放大" title="放大" data-icon="plus" data-reader disabled></button>
+            <label class="sr-only" for="zoomMode">缩放方式</label>
+            <select id="zoomMode" class="zoom-select" data-reader disabled>
+              <option value="custom">自定义缩放</option>
+              <option value="height">适应高度</option>
+              <option value="pages-1">容纳 1 页</option>
+              <option value="pages-2">容纳 2 页</option>
+              <option value="pages-3">容纳 3 页</option>
+              <option value="pages-4">容纳 4 页</option>
+              <option value="actual">100% · 实际大小</option>
+            </select>
+          </div>
+          <span class="divider" aria-hidden="true"></span>
+          <div class="control-group layout-controls">
+            <label class="sr-only" for="layoutMode">页面布局</label>
+            <select id="layoutMode" data-reader disabled>
+              <option value="horizontal">横向连续</option>
+              <option value="vertical">纵向滚动</option>
+            </select>
+            <label id="columnsControl" class="inline-label" hidden>每行 <input id="columns" class="number-input columns-input" type="number" min="1" max="32" step="1" value="1" aria-label="每行页数" data-reader disabled /> 页</label>
+            <label class="sr-only" for="scrollInput">横向滚动方式</label>
+            <select id="scrollInput" title="横向滚动方式：自动判断鼠标或触控板，也可手动选择" data-reader disabled>
+              <option value="auto">滚动：自动</option>
+              <option value="page">滚动：按页</option>
+              <option value="smooth">滚动：连续</option>
+            </select>
+          </div>
+        </div>
+      </header>
+      <div id="notice" class="notice" role="alert" hidden><span id="noticeText"></span><button id="dismissNotice" class="icon-button" type="button" aria-label="关闭提示" data-icon="close"></button></div>
+      <div id="workspace" class="workspace">
+        <aside id="sidebar" class="reader-sidebar" aria-label="文档导航" hidden>
+          <div class="sidebar-header">
+            <div class="panel-tabs" role="tablist" aria-label="导航方式">
+              <button id="outlineTab" type="button" role="tab" aria-selected="true" aria-controls="outlinePanel">目录</button>
+              <button id="searchTab" type="button" role="tab" aria-selected="false" aria-controls="searchPanel" tabindex="-1">搜索</button>
+            </div>
+            <button id="closePanel" class="icon-button" type="button" aria-label="收起侧栏" title="收起侧栏（Esc）" data-icon="close"></button>
+          </div>
+          <section id="outlinePanel" class="panel-content" role="tabpanel" aria-labelledby="outlineTab">
+            <p id="outlineEmpty" class="muted panel-message">此文档没有目录。可通过页码或搜索定位内容。</p>
+            <nav id="outline" aria-label="文档目录"></nav>
+          </section>
+          <section id="searchPanel" class="panel-content" role="tabpanel" aria-labelledby="searchTab" hidden>
+            <label class="field-label" for="searchQuery">在文档中查找</label>
+            <input id="searchQuery" type="search" placeholder="输入文字" autocomplete="off" spellcheck="false" data-reader disabled />
+            <div class="search-navigation">
+              <span id="findCount" role="status" aria-live="polite">输入文字开始搜索</span>
+              <button id="previousFind" class="icon-button" type="button" aria-label="上一个匹配" title="上一个匹配（Shift+Enter）" data-icon="up" disabled></button>
+              <button id="nextFind" class="icon-button" type="button" aria-label="下一个匹配" title="下一个匹配（Enter）" data-icon="down" disabled></button>
+            </div>
+            <p id="findHelp" class="muted panel-message">匹配内容会在页面中高亮显示。</p>
+          </section>
+        </aside>
+        <main id="readingArea" class="reading-area" aria-label="PDF 阅读区">
+          <div id="viewerContainer" tabindex="0" aria-label="PDF 页面" hidden><div id="viewer" class="pdfViewer"></div></div>
+          <section id="emptyState" class="empty-state" aria-labelledby="emptyTitle">
+            <div class="empty-content">
+              <h1 id="emptyTitle">PanoPDF</h1>
+              <p class="tagline">把 PDF 铺开读。</p>
+              <button id="emptyOpen" class="primary-button" type="button" data-icon="open"><span>打开本地 PDF</span></button>
+              <p class="open-hint">或将 PDF 拖到此处 · <kbd id="openShortcut">Ctrl O</kbd></p>
+              <p id="privacyNote" class="muted local-note">文件仅在本机读取，无需上传。</p>
+              <section id="recentSection" class="recent-section" aria-labelledby="recentTitle" hidden>
+                <h2 id="recentTitle">最近打开</h2>
+                <ul id="recentList" class="recent-list"></ul>
+              </section>
+            </div>
+          </section>
+          <section id="loadingState" class="center-state" aria-labelledby="loadingTitle" aria-live="polite" hidden>
+            <h2 id="loadingTitle">正在打开 PDF…</h2>
+            <p id="loadingFilename" class="muted"></p>
+            <progress aria-label="正在读取文档"></progress>
+            <p class="muted">大型文档可能需要稍等片刻。</p>
+          </section>
+          <section id="errorState" class="center-state" aria-labelledby="errorTitle" hidden>
+            <h2 id="errorTitle">无法打开 PDF</h2>
+            <p id="errorMessage" role="alert"></p>
+            <div class="state-actions"><button id="errorOpen" class="primary-button" type="button">打开其他 PDF</button><button id="backToEmpty" type="button">返回</button></div>
+          </section>
+          <div id="dropOverlay" class="drop-overlay" hidden><p>松开以打开 PDF</p></div>
+        </main>
+      </div>
+      <footer class="statusbar"><span id="statusMessage" role="status" aria-live="polite">打开 PDF 开始阅读</span><span id="documentStatus"></span><span id="storageStatus">本地文件 · 无需上传</span></footer>
+    </div>
+    <input id="browserFile" class="sr-only" type="file" accept=".pdf,application/pdf" tabindex="-1" aria-label="选择本地 PDF" />
+    <dialog id="passwordDialog" aria-labelledby="passwordTitle" aria-describedby="passwordDescription">
+      <form id="passwordForm" method="dialog">
+        <h2 id="passwordTitle">此 PDF 需要密码</h2>
+        <p id="passwordDescription">输入文档密码以继续打开。</p>
+        <label class="field-label" for="passwordInput">文档密码</label>
+        <input id="passwordInput" type="password" autocomplete="off" aria-describedby="passwordError" autofocus />
+        <p id="passwordError" class="password-error" role="alert" hidden>密码不正确，请重试。</p>
+        <div class="dialog-actions"><button id="cancelPassword" type="button">取消</button><button id="submitPassword" class="primary-button" type="submit">打开文档</button></div>
+      </form>
+    </dialog>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
