@@ -9,7 +9,7 @@ const {
 } = require('./security.cjs');
 
 function sanitizeSettings(value) {
-  const empty = { version: 1, recents: [] };
+  const empty = { version: 1, hasLaunched: false, recents: [] };
   if (!record(value) || value.version !== 1 || !Array.isArray(value.recents)) return empty;
   const ids = new Set();
   const paths = new Set();
@@ -27,7 +27,7 @@ function sanitizeSettings(value) {
     recents.push({ id: entry.id, path: filePath, lastOpened: entry.lastOpened, ...(position ? { position } : {}) });
   }
   recents.sort((a, b) => b.lastOpened - a.lastOpened);
-  return { version: 1, recents: recents.slice(0, MAX_RECENTS) };
+  return { version: 1, hasLaunched: value.hasLaunched === true || recents.length > 0, recents: recents.slice(0, MAX_RECENTS) };
 }
 
 async function atomicWrite(filePath, value) {
@@ -53,11 +53,14 @@ class SettingsStore {
     this.filePath = filePath;
     this.write = write;
     this.warn = warn;
-    this.state = { version: 1, recents: [] };
+    this.state = sanitizeSettings(null);
+    this.loadError = undefined;
+    this.launch = undefined;
     this.queue = Promise.resolve();
     this.pending = 0;
   }
   async load() {
+    this.loadError = undefined;
     try {
       // Nonblocking open lets us reject FIFOs before they can stall startup.
       const handle = await fs.open(this.filePath, constants.O_RDONLY | (constants.O_NONBLOCK || 0));
@@ -71,10 +74,22 @@ class SettingsStore {
         this.state = sanitizeSettings(JSON.parse(buffer.subarray(0, bytesRead).toString('utf8')));
       } finally { await handle.close(); }
     } catch (error) {
-      this.state = { version: 1, recents: [] };
-      if (error.code !== 'ENOENT') this.warn('Ignoring unreadable or corrupt settings:', error.message);
+      this.state = sanitizeSettings(null);
+      if (error.code !== 'ENOENT') {
+        this.warn('Ignoring unreadable or corrupt settings:', error.message);
+        this.loadError = '无法读取上次的设置，请重新打开 PDF；若问题持续，请检查应用数据目录的空间和权限。';
+      }
     }
   }
+  beginLaunch() {
+    if (this.launch) return this.launch;
+    const firstRun = !this.state.hasLaunched && this.state.recents.length === 0;
+    this.launch = this.mutate(state => { state.hasLaunched = true; })
+      .then(() => ({ firstRun, ...(this.loadError ? { error: this.loadError } : {}) }))
+      .catch(error => ({ firstRun, error: [this.loadError, error.message].filter(Boolean).join('\n') }));
+    return this.launch;
+  }
+  lastPath() { return this.state.recents[0]?.path; }
   recent() {
     return this.state.recents.map(entry => ({
       id: entry.id, name: path.basename(entry.path), lastOpened: entry.lastOpened, page: entry.position?.page ?? 1,

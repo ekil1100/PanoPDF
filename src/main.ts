@@ -2,7 +2,7 @@
 import './style.css';
 import { icon, type IconName } from './icons';
 import { createReader } from './reader';
-import type { FindState, LayoutMode, OpenedFile, OutlineEntry, ReaderState, ReadingPosition, RecentFile, ScrollInput } from './contracts';
+import type { AppCommand, FindState, LayoutMode, OpenedFile, OutlineEntry, ReaderState, ReadingPosition, RecentFile, ScrollInput, WindowAction, WindowState } from './contracts';
 
 function element<T extends HTMLElement>(id: string): T {
   const node = document.getElementById(id);
@@ -23,9 +23,11 @@ for (const node of document.querySelectorAll<HTMLElement>('[data-icon]')) {
   node.insertAdjacentHTML('afterbegin', icon(node.dataset.icon as IconName));
 }
 const bridge = window.panopdf;
-const isMac = /mac/i.test(bridge?.platform ?? navigator.platform);
+const isMac = bridge ? bridge.platform === 'darwin' : /mac/i.test(navigator.platform);
 const openShortcut = isMac ? '⌘ O' : 'Ctrl O';
 element('openShortcut').textContent = openShortcut;
+element('menuOpenShortcut').textContent = openShortcut;
+element('menuCloseShortcut').textContent = isMac ? '⌘ W' : 'Ctrl W';
 element('openFile').title = `打开 PDF（${openShortcut}）`;
 element('searchToggle').title = `搜索文档（${isMac ? '⌘' : 'Ctrl'} F）`;
 if (!bridge) {
@@ -37,6 +39,8 @@ type Phase = 'empty' | 'opening' | 'ready' | 'error' | 'closing';
 type Panel = 'outline' | 'search';
 type SavedPosition = { id: string; position: ReadingPosition };
 let phase: Phase = 'empty';
+let firstRun = !bridge;
+let startupPending = !!bridge;
 let activeFile: Pick<OpenedFile, 'id' | 'name'> | null = null;
 let state: ReaderState | null = null;
 let panel: Panel | null = null;
@@ -168,8 +172,16 @@ const reader = createReader(ui.container, ui.viewer, {
   },
 });
 
+function renderWelcome() {
+  element('emptyTitle').textContent = firstRun ? '欢迎使用 PanoPDF' : 'PanoPDF';
+  element('welcomeIntro').hidden = !firstRun;
+  element('welcomeGuide').hidden = !firstRun;
+}
 function renderControls() {
   const ready = phase === 'ready' && !!state?.loaded && !closingWindow;
+  disabled('openFile', startupPending || closingWindow);
+  disabled('emptyOpen', startupPending || closingWindow);
+  element('readerToolbar').hidden = phase !== 'ready' && phase !== 'opening';
   for (const control of document.querySelectorAll<HTMLInputElement | HTMLButtonElement | HTMLSelectElement>('[data-reader]')) control.disabled = !ready;
   disabled('closeFile', !activeFile || phase === 'closing' || closingWindow);
   ui.empty.hidden = phase !== 'empty';
@@ -344,8 +356,8 @@ function finishPassword(value: string | null) {
   passwordCancelled = value === null;
   if (ui.password.open) ui.password.close();
   ui.passwordInput.value = '';
-  if (passwordFocus?.isConnected && !passwordFocus.closest('[hidden]')) passwordFocus.focus();
-  else element('openFile').focus();
+  if (passwordFocus?.isConnected && passwordFocus.checkVisibility()) passwordFocus.focus();
+  else element('fileMenuButton').focus();
   passwordFocus = null;
   resolve(value);
 }
@@ -399,6 +411,8 @@ async function openDocument(file: OpenedFile) {
     }
     if (!state?.loaded) throw new Error(openingError || 'PDF did not load');
     phase = 'ready';
+    firstRun = false;
+    renderWelcome();
     renderControls();
     reader.refreshLayout();
     ui.container.focus();
@@ -440,7 +454,7 @@ async function localFile(file: File): Promise<OpenedFile> {
   return opened;
 }
 function openPicker() {
-  if (disposed || closingWindow || ui.password.open) return;
+  if (disposed || closingWindow || startupPending || ui.password.open) return;
   if (!bridge) { ui.file.click(); return; }
   enqueue(async () => {
     const file = await bridge.openFile();
@@ -491,8 +505,50 @@ async function loadRecent() {
   }
 }
 
-for (const id of ['openFile', 'emptyOpen', 'errorOpen']) click(id, openPicker);
-click('closeFile', () => { finishPassword(null); enqueue(closeDocument); });
+const fileMenu = element('fileMenu');
+const menuButton = element<HTMLButtonElement>('fileMenuButton');
+function hideFileMenu() {
+  if (fileMenu.matches(':popover-open')) fileMenu.hidePopover();
+  menuButton.setAttribute('aria-expanded', 'false');
+}
+function showFileMenu() {
+  fileMenu.showPopover();
+  menuButton.setAttribute('aria-expanded', 'true');
+  fileMenu.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+}
+click('fileMenuButton', () => fileMenu.matches(':popover-open') ? hideFileMenu() : showFileMenu());
+listen(menuButton, 'keydown', event => {
+  if (event.key === 'ArrowDown') { event.preventDefault(); showFileMenu(); }
+});
+listen(fileMenu, 'toggle', () => menuButton.setAttribute('aria-expanded', String(fileMenu.matches(':popover-open'))));
+listen(fileMenu, 'keydown', event => {
+  const items = [...fileMenu.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+  if (event.key === 'Escape') {
+    event.preventDefault(); event.stopPropagation(); hideFileMenu(); menuButton.focus();
+  } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key) && items.length) {
+    event.preventDefault();
+    const index = items.indexOf(document.activeElement as HTMLButtonElement);
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 :
+      (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+    items[next]!.focus();
+  } else if (event.key === 'Tab') { hideFileMenu(); menuButton.focus(); }
+});
+for (const id of ['openFile', 'emptyOpen', 'errorOpen']) click(id, () => { hideFileMenu(); openPicker(); });
+click('closeFile', () => { hideFileMenu(); finishPassword(null); enqueue(closeDocument); });
+function renderWindowState(next: WindowState) {
+  const button = element<HTMLButtonElement>('maximizeWindow');
+  const label = next.maximized ? '还原窗口' : '最大化窗口';
+  button.innerHTML = icon(next.maximized ? 'restore' : 'maximize');
+  button.setAttribute('aria-label', label);
+  button.title = label;
+  button.disabled = next.fullscreen;
+}
+function windowAction(action: WindowAction) {
+  if (bridge) void bridge.windowAction(action).catch(() => notice('窗口操作失败，请重试。'));
+}
+click('minimizeWindow', () => windowAction('minimize'));
+click('maximizeWindow', () => windowAction('toggle-maximize'));
+click('closeWindow', () => windowAction('close'));
 click('backToEmpty', () => enqueue(closeDocument));
 click('dismissNotice', () => { element('notice').hidden = true; });
 listen(ui.file, 'change', () => {
@@ -568,9 +624,13 @@ listen(ui.zoomMode, 'change', () => {
 function isEditable(target: EventTarget | null) {
   return target instanceof HTMLElement && (!!target.closest('input, textarea, select') || target.isContentEditable);
 }
-function command(value: 'open' | 'find' | 'zoom-in' | 'zoom-out' | 'actual-size') {
+function command(value: AppCommand) {
   if (disposed || closingWindow || ui.password.open) return;
-  if (value === 'open') { openPicker(); return; }
+  if (value === 'open') { hideFileMenu(); openPicker(); return; }
+  if (value === 'close-document') {
+    if (activeFile) { hideFileMenu(); enqueue(closeDocument); }
+    return;
+  }
   if (value === 'find') { showPanel('search'); return; }
   if (phase !== 'ready' || isEditable(document.activeElement)) return;
   if (value === 'zoom-in') reader.zoomBy(1.1);
@@ -585,6 +645,9 @@ listen(document, 'keydown', event => {
     if (key === 'o' || key === 'f') {
       event.preventDefault();
       if (!event.repeat) command(key === 'o' ? 'open' : 'find');
+    } else if (key === 'w' && !event.shiftKey) {
+      event.preventDefault();
+      if (!event.repeat) command('close-document');
     } else if (!isEditable(event.target) && phase === 'ready') {
       if (key === '+' || key === '=') { event.preventDefault(); command('zoom-in'); }
       else if (key === '-') { event.preventDefault(); command('zoom-out'); }
@@ -646,15 +709,38 @@ listen(window, 'beforeunload', event => {
   finishPassword(null);
   void flushPosition().finally(() => {
     allowWindowClose = true;
-    window.close();
+    // With no pending write, a microtask is still inside the cancelled close request.
+    setTimeout(() => window.close(), 0);
   });
 });
 
+renderWelcome();
 renderControls();
-void loadRecent();
 if (bridge) {
+  element('windowControls').hidden = false;
   unsubscribers.push(bridge.onOpenFile(file => enqueue(() => openDocument(file))));
   unsubscribers.push(bridge.onCommand(command));
+  unsubscribers.push(bridge.onWindowState(renderWindowState));
+  void bridge.getWindowState().then(renderWindowState).catch(() => {});
+  // Enqueue startup before native open events; subsequent events wait for the initial PDF to settle.
+  enqueue(async () => {
+    try {
+      const startup = await bridge.getStartup();
+      if (disposed || closingWindow) return;
+      firstRun = startup.firstRun;
+      renderWelcome();
+      if (startup.error) notice(startup.error);
+      if (startup.file) await openDocument(startup.file);
+    } catch (error) {
+      notice(explainError(error, '无法恢复上次的文档，请从“文件”菜单重新打开 PDF。'));
+    } finally {
+      startupPending = false;
+      renderControls();
+    }
+    await loadRecent();
+  });
+} else {
+  void loadRecent();
 }
 // ResizeObserver catches toolbar wrapping and sidebar changes, not just window resizes.
 let layoutFrame = 0;

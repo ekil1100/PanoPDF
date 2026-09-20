@@ -25,6 +25,10 @@ function validatePath(value) {
   }
   return value;
 }
+function validateWindowAction(value) {
+  if (!['minimize', 'toggle-maximize', 'close'].includes(value)) fail();
+  return value;
+}
 function validatePosition(value) {
   const keys = ['page', 'scale', 'layout', 'columns', 'zoomMode', 'fitPages', 'scrollInput', 'left', 'top'];
   if (!record(value) || Object.keys(value).length > keys.length
@@ -161,7 +165,7 @@ function friendlyError(error) {
 
 module.exports = {
   APP_URL, MAX_PDF_BYTES, MAX_RECENTS, MAX_SETTINGS_BYTES, UserError, fail, record,
-  validId, validateId, validatePath, validatePosition, validateExternalUrl, validateDevUrl,
+  validId, validateId, validatePath, validateWindowAction, validatePosition, validateExternalUrl, validateDevUrl,
   trustedDocument, validateSender, allowedRequest, contentSecurityPolicy, assetPath, isWithin,
   resolvePdf, readPdf, hasPdfMagic, friendlyError,
 };

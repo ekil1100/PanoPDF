@@ -533,8 +533,8 @@ export function createReader(
 
   const resize = new ResizeObserver(() => {
     if (resizeFrame || !ready()) return;
-    const anchor = stableAnchor;
-    resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; refresh(anchor); });
+    // Navigation may update the anchor before this frame runs; never restore the queued snapshot.
+    resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; refresh(stableAnchor); });
   });
   resize.observe(container);
   container.addEventListener('wheel', wheel, { passive: false, signal: lifetime.signal });

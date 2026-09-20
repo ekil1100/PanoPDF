@@ -29,8 +29,17 @@ export interface RecentFile {
   page: number;
 }
 
+export type AppCommand = 'open' | 'close-document' | 'find' | 'zoom-in' | 'zoom-out' | 'actual-size';
+export type WindowAction = 'minimize' | 'toggle-maximize' | 'close';
+export interface WindowState { maximized: boolean; fullscreen: boolean }
+export interface StartupState { firstRun: boolean; file: OpenedFile | null; error?: string }
+
 export interface DesktopBridge {
   platform: string;
+  getStartup(): Promise<StartupState>;
+  getWindowState(): Promise<WindowState>;
+  windowAction(action: WindowAction): Promise<void>;
+  onWindowState(callback: (state: WindowState) => void): () => void;
   openFile(): Promise<OpenedFile | null>;
   openRecent(id: string): Promise<OpenedFile>;
   openDropped(file: File): Promise<OpenedFile>;
@@ -38,7 +47,7 @@ export interface DesktopBridge {
   savePosition(id: string, position: ReadingPosition): Promise<void>;
   openExternal(url: string): Promise<void>;
   onOpenFile(callback: (file: OpenedFile) => void): () => void;
-  onCommand(callback: (command: 'open' | 'find' | 'zoom-in' | 'zoom-out' | 'actual-size') => void): () => void;
+  onCommand(callback: (command: AppCommand) => void): () => void;
 }
 
 declare global {

@@ -2,8 +2,18 @@
 
 // Sandboxed preloads may require Electron, but not local Node modules.
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
-const callbacks = { file: new Set(), command: new Set() };
-const commands = new Set(['open', 'find', 'zoom-in', 'zoom-out', 'actual-size']);
+const callbacks = { file: new Set(), command: new Set(), 'window-state': new Set() };
+const commands = new Set(['open', 'close-document', 'find', 'zoom-in', 'zoom-out', 'actual-size']);
+const windowActions = new Set(['minimize', 'toggle-maximize', 'close']);
+let startupAcknowledgement;
+function acknowledgeStartup() {
+  // Let the bridged promise's renderer continuations run before enabling native events.
+  if (startupAcknowledgement) return;
+  startupAcknowledgement = setTimeout(() => {
+    startupAcknowledgement = undefined;
+    void invoke('pano:startup-ready').catch(error => console.error('Startup acknowledgement failed:', error.name));
+  }, 0);
+}
 const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 function id(value) {
   if (typeof value !== 'string' || !idPattern.test(value)) throw new Error('文件标识无效。');
@@ -50,9 +60,10 @@ function subscribe(kind, callback) {
     }
   };
 }
-for (const kind of ['file', 'command']) {
+for (const kind of ['file', 'command', 'window-state']) {
   ipcRenderer.on(`pano:${kind}`, (_event, value) => {
     if (kind === 'command' && !commands.has(value)) return;
+    if (kind === 'window-state' && (!value || typeof value.maximized !== 'boolean' || typeof value.fullscreen !== 'boolean')) return;
     for (const callback of [...callbacks[kind]]) {
       try { callback(value); } catch (error) { console.error('Desktop event callback failed:', error?.name || 'Error'); }
     }
@@ -60,6 +71,17 @@ for (const kind of ['file', 'command']) {
 }
 contextBridge.exposeInMainWorld('panopdf', {
   platform: process.platform,
+  getStartup: async () => {
+    const state = await invoke('pano:startup');
+    acknowledgeStartup();
+    return state;
+  },
+  getWindowState: () => invoke('pano:window-state'),
+  windowAction: async action => {
+    if (!windowActions.has(action)) throw new Error('请求参数无效。');
+    await invoke('pano:window-action', action);
+  },
+  onWindowState: callback => subscribe('window-state', callback),
   openFile: () => invoke('pano:open'),
   openRecent: async value => invoke('pano:recent-open', id(value)),
   openDropped: async file => {

@@ -10,7 +10,7 @@ web
 
 ## Stack
 
-用户已确认 Electron + PDF.js，并使用 Bun 管理依赖和项目脚本。首版采用 TypeScript 与 Vite 构建，不引入额外前端框架。Electron 运行时保持不变。
+用户已确认 Electron + PDF.js，并使用 Bun 管理依赖和项目脚本。单元测试使用 Vitest，端到端测试使用 Playwright。首版采用 TypeScript 与 Vite 构建，不引入额外前端框架。Electron 运行时保持不变。
 
 ## Product Purpose
 
@@ -18,7 +18,7 @@ web
 
 ## Operating Context
 
-用户打开本地 PDF，在桌面窗口阅读，可切换横向连续布局与可设置每行页数的纵向布局。
+用户打开本地 PDF，在桌面窗口阅读，可切换横向连续布局与可设置每行页数的纵向布局。首次启动提供欢迎与打开引导，后续启动默认恢复上次文件；明确指定的文件优先。
 
 ## Capabilities and Constraints
 
@@ -26,7 +26,7 @@ web
 
 ## Brand Commitments
 
-名称 PanoPDF，中文描述“全景 PDF 阅读器”，标语“把 PDF 铺开读。”用户已批准工具优先、少装饰的界面：顶部紧凑工具栏、可收起的目录／搜索侧栏、浅灰背景和系统字体；阅读区占据主要空间。
+名称 PanoPDF，中文描述“全景 PDF 阅读器”，标语“把 PDF 铺开读。”用户已批准工具优先、少装饰的界面：一致的自定义标题栏与紧凑阅读工具栏、可收起的目录／搜索侧栏、浅灰背景和系统字体；阅读区占据主要空间。标题栏承载文件名与“文件”菜单，不再保留重复的打开文件行。
 
 ## Evidence on Hand
 

@@ -10,13 +10,22 @@
   <body>
     <div id="app">
       <header class="app-header" aria-label="阅读工具">
-        <div class="document-bar">
-          <button id="openFile" class="text-button" type="button" title="打开 PDF" data-icon="open"><span>打开</span></button>
-          <span class="divider" aria-hidden="true"></span>
+        <div id="titlebar" class="titlebar">
+          <div class="titlebar-menu">
+            <button id="fileMenuButton" class="titlebar-menu-button" type="button" aria-haspopup="menu" aria-controls="fileMenu" aria-expanded="false">文件</button>
+          </div>
           <span id="filename" class="filename">PanoPDF</span>
-          <button id="closeFile" class="icon-button" type="button" aria-label="关闭文档" title="关闭文档" data-icon="close" disabled></button>
+          <div id="windowControls" class="window-controls" aria-label="窗口控制" hidden>
+            <button id="minimizeWindow" type="button" aria-label="最小化窗口" title="最小化窗口" data-icon="minus"></button>
+            <button id="maximizeWindow" type="button" aria-label="最大化窗口" title="最大化窗口" data-icon="maximize"></button>
+            <button id="closeWindow" type="button" aria-label="关闭窗口" title="关闭窗口" data-icon="close"></button>
+          </div>
+          <div id="fileMenu" class="file-menu" role="menu" aria-label="文件" popover>
+            <button id="openFile" type="button" role="menuitem" data-icon="open"><span>打开 PDF…</span><kbd id="menuOpenShortcut">Ctrl O</kbd></button>
+            <button id="closeFile" type="button" role="menuitem" data-icon="close" disabled><span>关闭文档</span><kbd id="menuCloseShortcut">Ctrl W</kbd></button>
+          </div>
         </div>
-        <div class="reader-toolbar" aria-label="文档操作">
+        <div id="readerToolbar" class="reader-toolbar" aria-label="文档操作" hidden>
           <div class="control-group">
             <button id="outlineToggle" class="icon-button" type="button" aria-label="文档目录" title="文档目录" aria-controls="sidebar" aria-expanded="false" data-icon="outline" data-reader disabled></button>
             <button id="searchToggle" class="icon-button" type="button" aria-label="搜索文档" title="搜索文档" aria-controls="sidebar" aria-expanded="false" data-icon="search" data-reader disabled></button>
@@ -94,9 +103,15 @@
             <div class="empty-content">
               <h1 id="emptyTitle">PanoPDF</h1>
               <p class="tagline">把 PDF 铺开读。</p>
+              <p id="welcomeIntro" class="welcome-intro" hidden>打开第一份 PDF，找到适合你的阅读方式。</p>
               <button id="emptyOpen" class="primary-button" type="button" data-icon="open"><span>打开本地 PDF</span></button>
               <p class="open-hint">或将 PDF 拖到此处 · <kbd id="openShortcut">Ctrl O</kbd></p>
               <p id="privacyNote" class="muted local-note">文件仅在本机读取，无需上传。</p>
+              <dl id="welcomeGuide" class="welcome-guide" hidden>
+                <div><dt>铺开读</dt><dd>横向滚动浏览多页，自由缩放决定看多少。</dd></div>
+                <div><dt>换个布局</dt><dd>切换纵向滚动，选择每行显示的页数。</dd></div>
+                <div><dt>随时继续</dt><dd>通过目录和搜索定位，下次启动接着读。</dd></div>
+              </dl>
               <section id="recentSection" class="recent-section" aria-labelledby="recentTitle" hidden>
                 <h2 id="recentTitle">最近打开</h2>
                 <ul id="recentList" class="recent-list"></ul>

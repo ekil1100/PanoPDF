@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test } from 'vitest';
 import {
   anchorPage, clampScale, fitScale, heightScale, isPageWheel, normalizePosition, pageStep,
   pdfErrorMessage, positiveInteger, safeExternalUrl, wheelPixels,

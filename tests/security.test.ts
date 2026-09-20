@@ -1,21 +1,22 @@
-'use strict';
+import { test, type TestContext } from 'vitest';
+import assert from 'node:assert/strict';
+import * as fs from 'node:fs/promises';
+import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 
-const { test } = require('node:test');
-const assert = require('node:assert/strict');
-const fs = require('node:fs/promises');
-const path = require('node:path');
-const { randomUUID } = require('node:crypto');
-const { execFileSync, spawnSync } = require('node:child_process');
+const require = createRequire(import.meta.url);
 const security = require('../electron/security.cjs');
 const { SettingsStore, sanitizeSettings, atomicWrite } = require('../electron/settings.cjs');
 
 const position = { page: 3, scale: 1.25, layout: 'horizontal', columns: 2, zoomMode: 'custom', fitPages: 3, scrollInput: 'auto', left: 12, top: -5 };
-const localPdf = name => path.resolve('.agents', `${name}.pdf`);
-async function workspace(t) {
+const localPdf = (name: string) => path.resolve('.agents', `${name}.pdf`);
+async function workspace(t: TestContext) {
   const root = path.resolve('.agents');
   await fs.mkdir(root, { recursive: true });
   const directory = await fs.mkdtemp(path.join(root, 'security-'));
-  t.after(() => fs.rm(directory, { recursive: true, force: true }));
+  t.onTestFinished(() => fs.rm(directory, { recursive: true, force: true }));
   return directory;
 }
 
@@ -123,7 +124,7 @@ test('PDF reader requires a regular .pdf file, valid magic and bounded size', as
   }
 });
 
-test('final-component symlink replacement is rejected when supported', { skip: process.platform === 'win32' }, async t => {
+test.skipIf(process.platform === 'win32')('final-component symlink replacement is rejected when supported', async t => {
   const directory = await workspace(t);
   const target = path.join(directory, 'target.pdf');
   const link = path.join(directory, 'link.pdf');
@@ -141,15 +142,15 @@ test('settings sanitization drops corrupt entries, deduplicates and bounds recen
   ] });
   assert.equal(sanitized.recents.length, 20);
   assert.equal(sanitized.recents[0].lastOpened, 29);
-  assert.deepEqual(sanitizeSettings({ version: 2, recents: entries }), { version: 1, recents: [] });
+  assert.deepEqual(sanitizeSettings({ version: 2, recents: entries }), { version: 1, hasLaunched: false, recents: [] });
   assert.equal(sanitizeSettings({ version: 1, recents: [{ ...entries[0], position: { bad: true } }] }).recents[0].position, undefined);
 });
 
 test('missing, corrupt and oversized settings recover without crashing', async t => {
   const directory = await workspace(t);
   const file = path.join(directory, 'settings.json');
-  const warnings = [];
-  const store = new SettingsStore(file, { warn: message => warnings.push(message) });
+  const warnings: string[] = [];
+  const store = new SettingsStore(file, { warn: (message: string) => warnings.push(message) });
   await store.load();
   assert.deepEqual(store.recent(), []);
   await fs.writeFile(file, '{broken');
@@ -163,7 +164,7 @@ test('missing, corrupt and oversized settings recover without crashing', async t
   assert.equal(JSON.parse(await fs.readFile(file, 'utf8')).recents.length, 1);
 });
 
-test('FIFO settings cannot hang startup, including through a symlink', { skip: process.platform === 'win32' }, async t => {
+test.skipIf(process.platform === 'win32')('FIFO settings cannot hang startup, including through a symlink', async t => {
   const directory = await workspace(t);
   const fifo = path.join(directory, 'settings.pipe');
   execFileSync('mkfifo', [fifo]);
@@ -196,7 +197,7 @@ test('settings serialize concurrent updates, persist positions and expose no pat
   const directory = await workspace(t);
   const file = path.join(directory, 'settings.json');
   let writing = 0;
-  const store = new SettingsStore(file, { write: async (target, state) => {
+  const store = new SettingsStore(file, { write: async (target: string, state: unknown) => {
     assert.equal(writing++, 0);
     try { await atomicWrite(target, state); } finally { writing--; }
   } });
@@ -227,9 +228,9 @@ test('shutdown flush waits for the final queued position to commit', async t => 
   const file = path.join(directory, 'settings.json');
   const store = new SettingsStore(file);
   const entry = await store.remember(localPdf('shutdown'));
-  let release;
-  const gate = new Promise(resolve => { release = resolve; });
-  store.write = async (target, state) => { await gate; await atomicWrite(target, state); };
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  store.write = async (target: string, state: unknown) => { await gate; await atomicWrite(target, state); };
   const saving = store.savePosition(entry.id, { ...position, page: 9 });
   let flushed = false;
   const flushing = store.flush().then(() => { flushed = true; });
@@ -247,7 +248,7 @@ test('failed writes do not poison the queue or mutate committed state', async t 
   const directory = await workspace(t);
   let fails = true;
   const store = new SettingsStore(path.join(directory, 'settings.json'), {
-    warn: () => {}, write: async (file, value) => {
+    warn: () => {}, write: async (file: string, value: unknown) => {
       if (fails) throw new Error('Disk full');
       await atomicWrite(file, value);
     },
@@ -261,8 +262,8 @@ test('failed writes do not poison the queue or mutate committed state', async t 
 
 test('the settings write queue is bounded', async t => {
   const directory = await workspace(t);
-  let release;
-  const gate = new Promise(resolve => { release = resolve; });
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
   const store = new SettingsStore(path.join(directory, 'settings.json'), { write: () => gate });
   const pending = Array.from({ length: 32 }, (_, i) => store.remember(localPdf(`queued-${i}`)));
   await assert.rejects(store.remember(localPdf('overload')), /频繁/);

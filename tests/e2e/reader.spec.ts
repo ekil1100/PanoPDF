@@ -40,7 +40,7 @@ async function launch(file?: string): Promise<Page> {
   const page = await application.firstWindow();
   // Electron handles beforeunload without a browser confirmation; prevent Playwright's auto-dismiss race.
   page.on('dialog', dialog => { if (dialog.type() !== 'beforeunload') void dialog.dismiss(); });
-  await expect(page.locator('#openFile')).toBeVisible();
+  await expect(page.locator('#fileMenuButton')).toBeVisible();
   return page;
 }
 async function jump(page: Page, target: number) {
@@ -117,6 +117,7 @@ test('offline desktop reading, selection, search, outline, layouts, and restorat
   await page.locator('#zoomPercent').press('Enter');
   await jump(page, 7);
   await page.screenshot({ path: testInfo.outputPath('horizontal.png') });
+  await page.locator('#fileMenuButton').click();
   await page.locator('#closeFile').click();
   await expect(page.locator('#emptyState')).toBeVisible();
   await page.getByRole('button', { name: /a.pdf/ }).click();
@@ -130,7 +131,6 @@ test('queued native reopening preserves newer unsaved reading position', async (
   const settingsPath = path.join(directory, 'settings.json');
   await writeFile(settingsPath, JSON.stringify({ version: 1, recents: [{ id, path: documentA, lastOpened: Date.now(), position: initialPosition }] }));
   const page = await launch();
-  await page.getByRole('button', { name: /a.pdf/ }).click();
   await expect(page.locator('#pageNumber')).toBeEnabled();
   await expect.poll(async () => JSON.parse(await readFile(settingsPath, 'utf8')).recents[0].position?.page).toBe(1);
   await application!.evaluate(({ BrowserWindow }) => {
@@ -174,4 +174,137 @@ test('quitting immediately after navigation flushes the final position', async (
   application = undefined;
   const settings = JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8'));
   expect(settings.recents.find((entry: { path: string }) => entry.path === documentA).position.page).toBe(8);
+});
+
+async function quitApplication() {
+  const closing = application!.waitForEvent('close');
+  await application!.evaluate(({ app }) => { setTimeout(() => app.quit(), 0); });
+  await closing;
+  application = undefined;
+}
+async function seedRecent(file: string, page = 1) {
+  await writeFile(path.join(directory, 'settings.json'), JSON.stringify({
+    version: 1, hasLaunched: true,
+    recents: [{ id: randomUUID(), path: file, lastOpened: Date.now(), position: { ...initialPosition, page } }],
+  }));
+}
+
+test('first launch shows guidance once and keeps the toolbar out of the welcome screen', async ({}, testInfo) => {
+  let page = await launch();
+  await expect(page.locator('#welcomeGuide')).toBeVisible();
+  await expect(page.locator('#emptyTitle')).toHaveText('欢迎使用 PanoPDF');
+  await expect(page.locator('#openShortcut')).toHaveText(process.platform === 'darwin' ? '⌘ O' : 'Ctrl O');
+  await expect(page.locator('#readerToolbar')).toBeHidden();
+  await expect(page.locator('.document-bar')).toHaveCount(0);
+  await expect(page.locator('#openFile')).toBeHidden();
+  await expect(page.locator('#emptyOpen')).toBeEnabled();
+  await application!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(1440, 900));
+  await page.screenshot({ path: testInfo.outputPath('welcome-1440.png') });
+  await application!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setSize(800, 560));
+  await page.screenshot({ path: testInfo.outputPath('welcome-800.png') });
+  await quitApplication();
+  page = await launch();
+  await expect(page.locator('#emptyOpen')).toBeEnabled();
+  await expect(page.locator('#welcomeGuide')).toBeHidden();
+  await expect(page.locator('#emptyTitle')).toHaveText('PanoPDF');
+});
+
+test('next application launch automatically restores the last document and reading position', async () => {
+  let page = await launch(documentA);
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  await jump(page, 6);
+  await quitApplication();
+  page = await launch();
+  await expect(page.locator('#filename')).toHaveText('a.pdf');
+  await expect(page.locator('#pageNumber')).toHaveValue('6');
+  await expect(page.locator('#welcomeGuide')).toBeHidden();
+  await page.locator('#fileMenuButton').click();
+  await page.locator('#closeFile').click();
+  await expect(page.locator('#emptyState')).toBeVisible();
+  await expect(page.locator('#readerToolbar')).toBeHidden();
+  // Closing a document does not immediately reopen it in the same window.
+  expect(await page.evaluate(async () => (await window.panopdf!.getStartup()).file)).toBeNull();
+  await expect(page.locator('#emptyState')).toBeVisible();
+});
+
+test('an explicit startup file wins over the previous document', async () => {
+  await seedRecent(documentA, 7);
+  const page = await launch(documentB);
+  await expect(page.locator('#filename')).toHaveText('b.pdf');
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  await expect(page.locator('#pageNumber')).toHaveValue('1');
+  const settings = JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8'));
+  expect(settings.recents.find((entry: { path: string }) => entry.path === documentA).position.page).toBe(7);
+});
+
+test('missing last file is recoverable through the file menu and custom window controls work', async ({}, testInfo) => {
+  await seedRecent(path.join(directory, 'missing.pdf'));
+  const page = await launch();
+  await expect(page.locator('#noticeText')).toContainText('文件已移动或删除');
+  await expect(page.locator('#emptyOpen')).toBeEnabled();
+  await application!.evaluate(({ dialog }, file) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+  }, documentA);
+  await page.locator('#fileMenuButton').focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#fileMenu')).toBeVisible();
+  await expect(page.locator('#openFile')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#fileMenu')).toBeHidden();
+  await expect(page.locator('#fileMenuButton')).toBeFocused();
+  await page.locator('#fileMenuButton').click();
+  await page.locator('#openFile').click();
+  await expect(page.locator('#filename')).toHaveText('a.pdf');
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  await expect(page.locator('#fileMenu')).toBeHidden();
+  await page.locator('#dismissNotice').click();
+  await page.locator('#zoomMode').selectOption('pages-3');
+  await page.screenshot({ path: testInfo.outputPath('custom-titlebar-reader.png') });
+
+  expect(await page.locator('#titlebar').evaluate(node => getComputedStyle(node).getPropertyValue('-webkit-app-region'))).toBe('drag');
+  expect(await page.locator('#fileMenuButton').evaluate(node => getComputedStyle(node).getPropertyValue('-webkit-app-region'))).toBe('no-drag');
+  await page.locator('#maximizeWindow').click();
+  await expect.poll(() => page.evaluate(() => window.panopdf!.getWindowState())).toMatchObject({ maximized: true });
+  await expect(page.locator('#maximizeWindow')).toHaveAttribute('aria-label', '还原窗口');
+  await page.locator('#maximizeWindow').click();
+  await expect.poll(() => page.evaluate(() => window.panopdf!.getWindowState())).toMatchObject({ maximized: false });
+  await page.locator('#minimizeWindow').click();
+  await expect.poll(() => application!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMinimized())).toBe(true);
+  await application!.evaluate(({ BrowserWindow }) => { const window = BrowserWindow.getAllWindows()[0]!; window.restore(); window.focus(); });
+  await jump(page, 5);
+  const closed = page.waitForEvent('close');
+  await page.locator('#closeWindow').click();
+  await closed;
+  await expect.poll(async () => JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8')).recents[0].position.page).toBe(5);
+});
+
+test('a pending resize must not overwrite navigation before the next frame', async () => {
+  const page = await launch(documentA);
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  await application!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.setContentSize(1024, 642));
+  await page.locator('#zoomPercent').fill('55%');
+  await page.locator('#zoomPercent').press('Enter');
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  const settledPage = await page.evaluate(() => new Promise<string>(resolve => {
+    const container = document.getElementById('viewerContainer')!;
+    const width = container.clientWidth;
+    // This observer runs after the reader's observer has queued its resize frame.
+    const observer = new ResizeObserver(() => {
+      if (container.clientWidth === width) return;
+      observer.disconnect();
+      const input = document.getElementById('pageNumber') as HTMLInputElement;
+      input.value = '7';
+      input.dispatchEvent(new Event('change'));
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve(input.value)));
+    });
+    observer.observe(container);
+    container.style.right = '1px';
+  }));
+  expect(settledPage).toBe('7');
+  await page.locator('#fileMenuButton').click();
+  await page.locator('#closeFile').click();
+  await expect(page.locator('#emptyState')).toBeVisible();
+  expect(JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8')).recents[0].position.page).toBe(7);
+  await page.getByRole('button', { name: /a.pdf/ }).click();
+  await expect(page.locator('#pageNumber')).toHaveValue('7');
 });
