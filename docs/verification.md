@@ -50,12 +50,14 @@ bun run test:e2e
 
 ## 构建产物与边界
 
-本机为 macOS / Apple Silicon。此前使用以下命令生成未签名应用目录：
+本机为 macOS / Apple Silicon。添加 Release Action 时使用以下命令成功生成未签名应用目录、DMG 与 ZIP：
 
 ```bash
-CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist --dir --mac --arm64
+CSC_IDENTITY_AUTO_DISCOVERY=false bun run dist --mac --arm64 --publish never
 ```
 
-`release/mac-arm64/PanoPDF.app` 是此前打包产物，本轮未重新打包；预览当前改动使用 `bun run dev` 或构建后的 `bun run start`。应用仍使用 Electron 默认图标，尚未制作品牌图标、DMG／安装器，未签名或公证。
+产物包括 `release/mac-arm64/PanoPDF.app`、`release/PanoPDF-0.1.0-mac-arm64.dmg` 和 `release/PanoPDF-0.1.0-mac-arm64.zip`。应用仍使用 Electron 默认图标，尚未签名或公证；生成安装包不等同于已验证安装流程。
+
+`.github/workflows/release.yml` 与已有 CI 均通过 actionlint 1.7.12。版本标签匹配／不匹配分支、任务依赖、只读构建权限／发布写权限及四组平台架构配置通过本地检查。全部构建成功后才汇总上传 GitHub Release，产物名区分架构；未创建或推送标签，尚未实际执行远端 Release Action。
 
 尚未验证：Windows/Linux 原生运行与窗口控制、真实标题栏拖动、三平台安装器、系统文件关联、真实拖放与原生文件选择手势，以及大型复杂 PDF 的性能基准。CI 配置三平台 Vitest 与构建、macOS Electron E2E；本轮结果为本机验证，远端须以对应提交的 GitHub Actions 为准。强制结束进程不能保证保存最后一次进度。

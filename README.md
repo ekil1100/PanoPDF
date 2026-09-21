@@ -22,6 +22,29 @@ bun run dist         # Build and package for the current platform
 
 首次安装需下载 Electron。开发服务器仅监听 `127.0.0.1`；页面热更新可用，修改 `electron/` 后需重启 `bun run dev`。`bun run dev:web` 只预览浏览器界面，不具备桌面桥接、系统菜单或桌面最近记录功能。
 
+## 发布版本
+
+`.github/workflows/release.yml` 在推送 `v*` 标签时运行。标签必须与 `package.json` 的版本完全一致，例如版本 `0.1.0` 对应 `v0.1.0`，否则停止发布。
+
+工作流先运行 Vitest、类型检查及构建，macOS 还运行 Playwright Electron 测试，再汇总安装包到 GitHub Release：
+
+| 平台 | 架构 | 安装包 |
+| --- | --- | --- |
+| macOS | Apple Silicon（arm64）、Intel（x64） | DMG、ZIP |
+| Windows | x64 | NSIS EXE |
+| Linux | x64 | AppImage |
+
+产物名称包含版本、平台和架构，避免互相覆盖。全部构建与测试成功后才创建 Release，并自动生成发布说明；带 `-` 的版本标签（例如 `v0.2.0-beta.1`）标为预发布。使用 GitHub 自带的 `GITHUB_TOKEN`，只有发布任务有仓库写权限，不需要额外配置令牌。
+
+先修改并提交 `package.json` 版本及必要的 `bun.lock` 变更，将代码推送后，再发布对应标签：
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+**当前安装包不包含代码签名或 macOS 公证**，系统可能显示安全警告或拦截；自动打包不代表已通过安装与实机验收。此工作流配置尚需首次标签发布验证，本次没有创建或推送版本标签。
+
 ## 使用
 
 - 首次启动显示欢迎界面和打开引导；之后默认打开上次的 PDF 并恢复阅读位置。通过系统或命令行明确指定的文件优先。
@@ -65,7 +88,7 @@ bun run dist         # Build and package for the current platform
 - **8 项 Playwright Electron 端到端测试**：离线阅读、搜索／目录／布局、位置恢复、原生打开竞态、退出保存、首次欢迎、自动续读、明确打开优先、缺失文件恢复、自定义窗口控制及 resize 后页码回退回归。测试 PDF 在本地生成，不使用用户文件。
 - TypeScript 检查与 Vite 生产构建；PDF.js 主包有大于 500 kB 的体积提示，不是构建错误。
 - 开发与生产离线资源；开发启动脚本正确处理占用端口，收到 `Ctrl+C` 后关闭 Electron 和 Vite。
-- 此前 `electron-builder --dir --mac --arm64` 成功生成 **未签名** 应用目录 `release/mac-arm64/PanoPDF.app`；本轮未重新打包，不等于安装器、签名或公证已完成。
+- Release Action 配置已通过 actionlint；本机 `bun run dist --mac --arm64 --publish never` 成功生成 **未签名** macOS arm64 DMG、ZIP 及应用目录。版本标签检查的通过／拒绝分支已验证；这不等于安装、签名、公证或远端工作流已验证。
 - 本轮检查了 800、1440 像素宽欢迎界面及自定义标题栏阅读页；此前首版另有 800／1440／1920 宽客户区与密码状态的独立视觉审查，结论为 `ship`。
 
 尚未验证 Windows/Linux 原生运行、发行包安装、代码签名、公证、所有操作系统文件关联和真实拖放手势。原生选择器及确认框仍需人工验收。没有对大型扫描件、复杂矢量图做性能基准，不宣称性能达标。纯安全单元测试不依赖 Electron 运行时。

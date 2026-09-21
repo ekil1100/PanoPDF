@@ -32,6 +32,7 @@
   "build": {
     "appId": "com.panopdf.reader",
     "productName": "PanoPDF",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": { "output": "release" },
     "files": ["dist/**/*", "electron/**/*", "package.json"],
     "mac": { "target": ["dmg", "zip"], "category": "public.app-category.productivity" },
