@@ -263,6 +263,13 @@ test('missing last file is recoverable through the file menu and custom window c
 
   expect(await page.locator('#titlebar').evaluate(node => getComputedStyle(node).getPropertyValue('-webkit-app-region'))).toBe('drag');
   expect(await page.locator('#fileMenuButton').evaluate(node => getComputedStyle(node).getPropertyValue('-webkit-app-region'))).toBe('no-drag');
+  // Small CI displays can start with a screen-sized window. Establish the normal state first.
+  await application!.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0]!;
+    window.unmaximize();
+    window.setSize(800, 560);
+  });
+  await expect.poll(() => page.evaluate(() => window.panopdf!.getWindowState())).toMatchObject({ maximized: false });
   await page.locator('#maximizeWindow').click();
   await expect.poll(() => page.evaluate(() => window.panopdf!.getWindowState())).toMatchObject({ maximized: true });
   await expect(page.locator('#maximizeWindow')).toHaveAttribute('aria-label', '还原窗口');
