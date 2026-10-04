@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@kobalte/core": "^0.13.14",
+    "@tanstack/hotkeys": "^0.11.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "effect": "4.0.0",
@@ -53,25 +54,29 @@
       "dist/**/*",
       "electron/**/*",
       "licenses/**/*",
-      "package.json"
+      "package.json",
+      "assets/icons/icon.png"
     ],
     "mac": {
       "target": [
         "dmg",
         "zip"
       ],
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "icon": "assets/icons/icon.icns"
     },
     "win": {
       "target": [
         "nsis"
-      ]
+      ],
+      "icon": "assets/icons/icon.ico"
     },
     "linux": {
       "target": [
         "AppImage"
       ],
-      "category": "Office"
+      "category": "Office",
+      "icon": "assets/icons/icon.png"
     },
     "fileAssociations": [
       {

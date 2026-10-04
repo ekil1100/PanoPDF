@@ -182,7 +182,7 @@ test('floating chrome reveals on hover and focus without reducing the reading ar
     await application!.evaluate(({ BrowserWindow }) =>
       BrowserWindow.getAllWindows()[0]!.getTitle(),
     ),
-  ).toBe('a.pdf — PanoPDF');
+  ).toBe('a.pdf');
   const before = await page.locator('#readingArea').boundingBox();
   expect(before).not.toBeNull();
   const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
@@ -233,7 +233,7 @@ test('native frame reader uses the full content width and fits the requested pag
   if (process.platform === 'darwin') {
     await expect(page.locator('#titlebar')).toHaveCSS('background-color', 'rgb(231, 233, 237)');
     await expect(page.locator('#titlebar')).toHaveCSS('-webkit-app-region', 'drag');
-    await expect(page.locator('#titlebar')).toHaveText('a.pdf — PanoPDF');
+    await expect(page.locator('#titlebar')).toHaveText('a.pdf');
   } else {
     expect(frame.outer.height).toBeGreaterThan(frame.content.height);
   }
@@ -410,7 +410,7 @@ test('queued native reopening preserves newer unsaved reading position', async (
   await expect
     .poll(() => application!.evaluate(() => (globalThis as any).testNativeEvents))
     .toEqual(['b.pdf', 'a.pdf']);
-  await expect(page).toHaveTitle('a.pdf — PanoPDF');
+  await expect(page).toHaveTitle('a.pdf');
   await expect(page.locator('#pageNumber')).toBeEnabled();
   await expect(page.locator('#pageNumber')).toHaveValue('7');
   await expect
@@ -465,13 +465,34 @@ async function seedRecent(file: string, page = 1) {
   );
 }
 
-test('first launch shows guidance once and keeps the toolbar out of the welcome screen', async ({}, testInfo) => {
+test('welcome screen keeps only the dropzone, shortcut and recent files across launches', async ({}, testInfo) => {
   let page = await launch();
-  await expect(page.locator('#welcomeGuide')).toBeVisible();
-  await expect(page.locator('#emptyTitle')).toHaveText('欢迎使用 PanoPDF');
-  await expect(page.locator('#openShortcut')).toHaveText(
-    process.platform === 'darwin' ? '⌘ O' : 'Ctrl O',
+  await expect(page.locator('#emptyTitle, #welcomeGuide, #welcomeIntro, #privacyNote')).toHaveCount(
+    0,
   );
+  await expect(page.locator('.mac-titlebar-title')).toBeHidden();
+  await expect(page.locator('#openShortcut kbd')).toHaveText([
+    process.platform === 'darwin' ? '⌘' : 'Ctrl',
+    'O',
+  ]);
+  await expect(page.locator('#welcomeDropzone')).toBeVisible();
+  await expect(page.locator('#welcomeDropzone')).toHaveCSS('border-top-width', '0px');
+  await expect(page.locator('#welcomeDropzone')).toHaveCSS('min-height', '152px');
+  await page.evaluate(() => {
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(new File(['%PDF-1.7'], 'drag.pdf', { type: 'application/pdf' }));
+    document
+      .querySelector('#welcomeDropzone')!
+      .dispatchEvent(new DragEvent('dragenter', { bubbles: true, dataTransfer }));
+  });
+  await expect(page.locator('#welcomeDropzone')).toHaveAttribute('data-dragging', 'true');
+  await expect(page.locator('#dropOverlay')).toBeHidden();
+  await expect(page.locator('#welcomeDropzone')).toHaveCSS(
+    'background-color',
+    'rgba(39, 43, 51, 0.05)',
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+  await expect(page.locator('#welcomeDropzone')).not.toHaveAttribute('data-dragging', 'true');
   await expect(page.locator('#readerToolbar')).toBeHidden();
   await expect(page.locator('.document-bar')).toHaveCount(0);
   await expect(page.locator('.app-header')).toBeHidden();
@@ -487,8 +508,23 @@ test('first launch shows guidance once and keeps the toolbar out of the welcome 
   await quitApplication();
   page = await launch();
   await expect(page.locator('#emptyOpen')).toBeEnabled();
-  await expect(page.locator('#welcomeGuide')).toBeHidden();
-  await expect(page.locator('#emptyTitle')).toHaveText('PanoPDF');
+  await expect(page.locator('.mac-titlebar-title')).toBeHidden();
+  await expect(page.locator('#welcomeDropzone')).toBeVisible();
+  await application!.evaluate(({ dialog }, file) => {
+    dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
+  }, documentA);
+  await page.getByRole('button', { name: '打开本地 PDF', exact: true }).click();
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  if (process.platform === 'darwin') {
+    await expect(page.locator('.mac-titlebar-title')).toBeVisible();
+    await expect(page.locator('.mac-titlebar-title')).toHaveText('a.pdf');
+  }
+  await closeDocument(page);
+  await expect(page.locator('.mac-titlebar-title')).toBeHidden();
+  await expect(page.locator('#recentSection')).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('welcome-recent.png') });
+  await page.locator('.recent-button').first().click();
+  await expect(page.locator('#pageNumber')).toBeEnabled();
 });
 
 test('next application launch automatically restores the last document and reading position', async () => {
@@ -497,9 +533,9 @@ test('next application launch automatically restores the last document and readi
   await jump(page, 6);
   await quitApplication();
   page = await launch();
-  await expect(page).toHaveTitle('a.pdf — PanoPDF');
+  await expect(page).toHaveTitle('a.pdf');
   await expect(page.locator('#pageNumber')).toHaveValue('6');
-  await expect(page.locator('#welcomeGuide')).toBeHidden();
+  await expect(page.locator('#emptyState')).toBeHidden();
   await closeDocument(page);
   await expect(page.locator('#emptyState')).toBeVisible();
   await expect(page.locator('#readerToolbar')).toBeHidden();
@@ -511,7 +547,7 @@ test('next application launch automatically restores the last document and readi
 test('an explicit startup file wins over the previous document', async () => {
   await seedRecent(documentA, 7);
   const page = await launch(documentB);
-  await expect(page).toHaveTitle('b.pdf — PanoPDF');
+  await expect(page).toHaveTitle('b.pdf');
   await expect(page.locator('#pageNumber')).toBeEnabled();
   await expect(page.locator('#pageNumber')).toHaveValue('1');
   const settings = JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8'));
@@ -529,7 +565,7 @@ test('missing last file is recoverable through the open shortcut and window cont
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, documentA);
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+o' : 'Control+o');
-  await expect(page).toHaveTitle('a.pdf — PanoPDF');
+  await expect(page).toHaveTitle('a.pdf');
   await expect(page.locator('#pageNumber')).toBeEnabled();
   await expect(page.locator('#fileMenu')).toHaveCount(0);
   await expect(page.locator('#notice')).toHaveAttribute('role', 'alert');

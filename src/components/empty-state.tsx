@@ -1,65 +1,63 @@
 import { For } from 'solid-js';
+import { formatForDisplay } from '@tanstack/hotkeys';
 import type { AppState } from '../app-controller';
 import { Icon } from './icon';
 import { Button } from './ui/button';
+import { Empty } from './ui/empty';
+import { Kbd } from './ui/kbd';
+
+const logoUrl = new URL('../../assets/brand/panopdf-logo-white-tile-shadow.png', import.meta.url)
+  .href;
 
 export function EmptyState(props: {
   state: AppState;
   desktop: boolean;
   isMac: boolean;
+  dragging: boolean;
   open: () => void;
   openRecent: (id: string) => void;
   openRef: (node: HTMLButtonElement) => void;
 }) {
+  const shortcutKeys = () =>
+    formatForDisplay('Mod+O', { platform: props.isMac ? 'mac' : 'windows', parts: true });
   const recent = () =>
     [...props.state.recent].sort((a, b) => b.lastOpened - a.lastOpened).slice(0, 5);
   return (
     <section
       id="emptyState"
       class="empty-state"
-      aria-labelledby="emptyTitle"
+      aria-label="PanoPDF 欢迎页"
       hidden={props.state.phase !== 'empty'}
     >
       <div class="empty-content">
-        <h1 id="emptyTitle">{props.state.firstRun ? '欢迎使用 PanoPDF' : 'PanoPDF'}</h1>
-        <p class="tagline">把 PDF 铺开读。</p>
-        <p id="welcomeIntro" class="welcome-intro" hidden={!props.state.firstRun}>
-          打开第一份 PDF，找到适合你的阅读方式。
-        </p>
-        <Button
-          ref={props.openRef}
-          id="emptyOpen"
-          class="primary-button"
-          type="button"
-          data-icon="open"
-          disabled={props.state.startupPending || props.state.closingWindow}
-          onClick={props.open}
+        <img class="brand-logo" src={logoUrl} alt="" width="96" height="96" />
+        <Empty
+          id="welcomeDropzone"
+          class="welcome-dropzone ui-min-h-[152px] ui-border-0 data-[dragging=true]:ui-bg-primary/5"
+          data-dragging={props.dragging ? 'true' : undefined}
+          role="group"
+          aria-label="拖入 PDF 文件或使用按钮打开"
         >
-          <Icon name="open" />
-          <span>打开本地 PDF</span>
-        </Button>
-        <p class="open-hint">
-          或将 PDF 拖到此处 · <kbd id="openShortcut">{props.isMac ? '⌘ O' : 'Ctrl O'}</kbd>
-        </p>
-        <p id="privacyNote" class="muted local-note">
-          {props.desktop
-            ? '文件仅在本机读取，无需上传。'
-            : '浏览器预览：文件不上传，阅读位置仅在本次会话保留。'}
-        </p>
-        <dl id="welcomeGuide" class="welcome-guide" hidden={!props.state.firstRun}>
-          <div>
-            <dt>铺开读</dt>
-            <dd>横向滚动浏览多页，自由缩放决定看多少。</dd>
-          </div>
-          <div>
-            <dt>换个布局</dt>
-            <dd>切换纵向滚动，选择每行显示的页数。</dd>
-          </div>
-          <div>
-            <dt>随时继续</dt>
-            <dd>通过目录和搜索定位，下次启动接着读。</dd>
-          </div>
-        </dl>
+          <Button
+            ref={props.openRef}
+            id="emptyOpen"
+            class="primary-button"
+            type="button"
+            data-icon="open"
+            aria-label="打开本地 PDF"
+            aria-keyshortcuts={props.isMac ? 'Meta+O' : 'Control+O'}
+            disabled={props.state.startupPending || props.state.closingWindow}
+            onClick={props.open}
+          >
+            <Icon name="open" />
+            <span>打开本地 PDF</span>
+            <span id="openShortcut" class="open-shortcut" aria-hidden="true">
+              <For each={shortcutKeys()}>
+                {(key) => <Kbd class="ui-bg-white/10 ui-text-primary-foreground">{key}</Kbd>}
+              </For>
+            </span>
+          </Button>
+        </Empty>
         <section
           id="recentSection"
           class="recent-section"

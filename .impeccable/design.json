@@ -132,58 +132,58 @@
       },
       "accent": {
         "role": "primary",
-        "displayName": "操作蓝",
+        "displayName": "石墨黑",
         "tonalRamp": [
-          "oklch(15.00% 0.15184 256.80)",
-          "oklch(26.43% 0.15184 256.80)",
-          "oklch(37.86% 0.15184 256.80)",
-          "oklch(49.29% 0.15184 256.80)",
-          "oklch(60.71% 0.15184 256.80)",
-          "oklch(72.14% 0.15184 256.80)",
-          "oklch(83.57% 0.15184 256.80)",
-          "oklch(95.00% 0.15184 256.80)"
+          "oklch(15.00% 0.01500 265.00)",
+          "oklch(26.43% 0.01500 265.00)",
+          "oklch(37.86% 0.01500 265.00)",
+          "oklch(49.29% 0.01500 265.00)",
+          "oklch(60.71% 0.01500 265.00)",
+          "oklch(72.14% 0.01500 265.00)",
+          "oklch(83.57% 0.01500 265.00)",
+          "oklch(95.00% 0.01500 265.00)"
         ]
       },
       "accent-hover": {
         "role": "primary",
-        "displayName": "悬停深蓝",
+        "displayName": "悬停深灰",
         "tonalRamp": [
-          "oklch(15.00% 0.13164 257.07)",
-          "oklch(26.43% 0.13164 257.07)",
-          "oklch(37.86% 0.13164 257.07)",
-          "oklch(49.29% 0.13164 257.07)",
-          "oklch(60.71% 0.13164 257.07)",
-          "oklch(72.14% 0.13164 257.07)",
-          "oklch(83.57% 0.13164 257.07)",
-          "oklch(95.00% 0.13164 257.07)"
+          "oklch(15.00% 0.01500 265.00)",
+          "oklch(26.43% 0.01500 265.00)",
+          "oklch(37.86% 0.01500 265.00)",
+          "oklch(49.29% 0.01500 265.00)",
+          "oklch(60.71% 0.01500 265.00)",
+          "oklch(72.14% 0.01500 265.00)",
+          "oklch(83.57% 0.01500 265.00)",
+          "oklch(95.00% 0.01500 265.00)"
         ]
       },
       "accent-pressed": {
         "role": "primary",
-        "displayName": "按下深蓝",
+        "displayName": "按下深灰",
         "tonalRamp": [
-          "oklch(15.00% 0.11336 257.83)",
-          "oklch(26.43% 0.11336 257.83)",
-          "oklch(37.86% 0.11336 257.83)",
-          "oklch(49.29% 0.11336 257.83)",
-          "oklch(60.71% 0.11336 257.83)",
-          "oklch(72.14% 0.11336 257.83)",
-          "oklch(83.57% 0.11336 257.83)",
-          "oklch(95.00% 0.11336 257.83)"
+          "oklch(15.00% 0.01500 265.00)",
+          "oklch(26.43% 0.01500 265.00)",
+          "oklch(37.86% 0.01500 265.00)",
+          "oklch(49.29% 0.01500 265.00)",
+          "oklch(60.71% 0.01500 265.00)",
+          "oklch(72.14% 0.01500 265.00)",
+          "oklch(83.57% 0.01500 265.00)",
+          "oklch(95.00% 0.01500 265.00)"
         ]
       },
       "accent-soft": {
         "role": "primary",
-        "displayName": "浅蓝选中面",
+        "displayName": "浅灰选中面",
         "tonalRamp": [
-          "oklch(15.00% 0.01830 258.35)",
-          "oklch(26.43% 0.01830 258.35)",
-          "oklch(37.86% 0.01830 258.35)",
-          "oklch(49.29% 0.01830 258.35)",
-          "oklch(60.71% 0.01830 258.35)",
-          "oklch(72.14% 0.01830 258.35)",
-          "oklch(83.57% 0.01830 258.35)",
-          "oklch(95.00% 0.01830 258.35)"
+          "oklch(15.00% 0.01500 265.00)",
+          "oklch(26.43% 0.01500 265.00)",
+          "oklch(37.86% 0.01500 265.00)",
+          "oklch(49.29% 0.01500 265.00)",
+          "oklch(60.71% 0.01500 265.00)",
+          "oklch(72.14% 0.01500 265.00)",
+          "oklch(83.57% 0.01500 265.00)",
+          "oklch(95.00% 0.01500 265.00)"
         ]
       },
       "on-accent": {
@@ -272,50 +272,50 @@
       },
       "focus": {
         "role": "primary",
-        "displayName": "外壳焦点蓝",
+        "displayName": "外壳焦点灰",
         "tonalRamp": [
-          "oklch(15.00% 0.15242 256.29)",
-          "oklch(26.43% 0.15242 256.29)",
-          "oklch(37.86% 0.15242 256.29)",
-          "oklch(49.29% 0.15242 256.29)",
-          "oklch(60.71% 0.15242 256.29)",
-          "oklch(72.14% 0.15242 256.29)",
-          "oklch(83.57% 0.15242 256.29)",
-          "oklch(95.00% 0.15242 256.29)"
+          "oklch(15.00% 0.01500 265.00)",
+          "oklch(26.43% 0.01500 265.00)",
+          "oklch(37.86% 0.01500 265.00)",
+          "oklch(49.29% 0.01500 265.00)",
+          "oklch(60.71% 0.01500 265.00)",
+          "oklch(72.14% 0.01500 265.00)",
+          "oklch(83.57% 0.01500 265.00)",
+          "oklch(95.00% 0.01500 265.00)"
         ]
       },
       "reader-focus": {
         "role": "primary",
-        "displayName": "阅读焦点蓝",
+        "displayName": "阅读焦点灰",
         "tonalRamp": [
-          "oklch(15.00% 0.18277 259.68)",
-          "oklch(26.43% 0.18277 259.68)",
-          "oklch(37.86% 0.18277 259.68)",
-          "oklch(49.29% 0.18277 259.68)",
-          "oklch(60.71% 0.18277 259.68)",
-          "oklch(72.14% 0.18277 259.68)",
-          "oklch(83.57% 0.18277 259.68)",
-          "oklch(95.00% 0.18277 259.68)"
+          "oklch(15.00% 0.01500 265.00)",
+          "oklch(26.43% 0.01500 265.00)",
+          "oklch(37.86% 0.01500 265.00)",
+          "oklch(49.29% 0.01500 265.00)",
+          "oklch(60.71% 0.01500 265.00)",
+          "oklch(72.14% 0.01500 265.00)",
+          "oklch(83.57% 0.01500 265.00)",
+          "oklch(95.00% 0.01500 265.00)"
         ]
       },
       "selection": {
         "role": "primary",
-        "displayName": "文本选区蓝",
+        "displayName": "文本选区灰",
         "tonalRamp": [
-          "oklch(15.00% 0.04668 255.37)",
-          "oklch(26.43% 0.04668 255.37)",
-          "oklch(37.86% 0.04668 255.37)",
-          "oklch(49.29% 0.04668 255.37)",
-          "oklch(60.71% 0.04668 255.37)",
-          "oklch(72.14% 0.04668 255.37)",
-          "oklch(83.57% 0.04668 255.37)",
-          "oklch(95.00% 0.04668 255.37)"
+          "oklch(15.00% 0.01500 265.00)",
+          "oklch(26.43% 0.01500 265.00)",
+          "oklch(37.86% 0.01500 265.00)",
+          "oklch(49.29% 0.01500 265.00)",
+          "oklch(60.71% 0.01500 265.00)",
+          "oklch(72.14% 0.01500 265.00)",
+          "oklch(83.57% 0.01500 265.00)",
+          "oklch(95.00% 0.01500 265.00)"
         ]
       }
     },
     "typographyMeta": {
       "headline": {
-        "displayName": "空态产品名",
+        "displayName": "保留标题字号",
         "purpose": "紧凑产品标识，不作营销展示标题。"
       },
       "title": {
@@ -359,9 +359,9 @@
       "name": "主要按钮",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "密码弹窗等任务中的确认操作，使用现有蓝色状态。",
+      "description": "密码弹窗等任务中的确认操作，使用石墨黑状态。",
       "html": "<button class=\"ds-primary\" type=\"button\">打开文档</button>",
-      "css": ".ds-primary { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); background: var(--accent, #195db3); border-color: var(--accent, #195db3); color: var(--on-accent, #ffffff); } .ds-primary:hover:not(:disabled) { background: var(--accent-hover, #124a92); border-color: var(--accent-hover, #124a92); } .ds-primary:active:not(:disabled) { background: var(--accent-pressed, #0d3975); } .ds-primary:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-primary:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; }"
+      "css": ".ds-primary { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); background: var(--accent, #272b33); border-color: var(--accent, #272b33); color: var(--on-accent, #ffffff); } .ds-primary:hover:not(:disabled) { background: var(--accent-hover, #1d2026); border-color: var(--accent-hover, #1d2026); } .ds-primary:active:not(:disabled) { background: var(--accent-pressed, #14171c); } .ds-primary:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-primary:focus-visible { outline: 2px solid var(--focus, #454b57); outline-offset: 2px; }"
     },
     {
       "name": "普通按钮",
@@ -369,7 +369,7 @@
       "refersTo": "button-secondary",
       "description": "取消或返回等次要操作。",
       "html": "<button class=\"ds-secondary\" type=\"button\">取消</button>",
-      "css": ".ds-secondary { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); } .ds-secondary:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-secondary:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-secondary:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-secondary:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; }"
+      "css": ".ds-secondary { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); } .ds-secondary:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-secondary:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-secondary:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-secondary:focus-visible { outline: 2px solid var(--focus, #454b57); outline-offset: 2px; }"
     },
     {
       "name": "图标按钮",
@@ -377,7 +377,7 @@
       "refersTo": "button-icon",
       "description": "工具栏搜索入口；SVG 路径直接取自 src/icons.ts。",
       "html": "<button class=\"ds-icon-button\" type=\"button\" aria-label=\"搜索文档\" title=\"搜索文档\"><svg class=\"ds-icon\" xmlns=\"http://www.w3.org/2000/svg\" width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"m16 16 5 5\"/></svg></button>",
-      "css": ".ds-icon-button { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); width: 32px; height: 32px; padding: 6px; border-color: transparent; background: transparent; flex: 0 0 auto; } .ds-icon { width: 18px; height: 18px; flex: 0 0 auto; } .ds-icon-button:disabled .ds-icon { opacity: .65; } .ds-icon-button:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-icon-button:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-icon-button:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-icon-button:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; } .ds-icon-button[aria-expanded=\"true\"] { background: var(--accent-soft, #e8f0fc); color: var(--accent, #195db3); }"
+      "css": ".ds-icon-button { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); width: 32px; height: 32px; padding: 6px; border-color: transparent; background: transparent; flex: 0 0 auto; } .ds-icon { width: 18px; height: 18px; flex: 0 0 auto; } .ds-icon-button:disabled .ds-icon { opacity: .65; } .ds-icon-button:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-icon-button:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-icon-button:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-icon-button:focus-visible { outline: 2px solid var(--focus, #454b57); outline-offset: 2px; } .ds-icon-button[aria-expanded=\"true\"] { background: var(--accent-soft, #e8e9ec); color: var(--accent, #272b33); }"
     },
     {
       "name": "搜索输入",
@@ -385,7 +385,7 @@
       "refersTo": "input",
       "description": "有标签的单行搜索字段；包含焦点、placeholder、选区及错误状态。",
       "html": "<label class=\"ds-field-label\" for=\"ds-search\">在文档中查找</label><input class=\"ds-input\" id=\"ds-search\" type=\"search\" placeholder=\"输入文字\" autocomplete=\"off\" spellcheck=\"false\" />",
-      "css": ".ds-field-label { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); display: block; margin-bottom: 8px; font-weight: 550; color: var(--text, #242830); } .ds-input { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); min-width: 0; width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); caret-color: var(--accent, #195db3); } .ds-input::placeholder { color: var(--text-muted, #5b626d); opacity: 1; } .ds-input:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 0; } .ds-input[aria-invalid=\"true\"] { border-color: var(--error, #a32929); } .ds-input:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); } .ds-input::selection { background: var(--selection, #c3d9f6); color: var(--text, #242830); }"
+      "css": ".ds-field-label { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); display: block; margin-bottom: 8px; font-weight: 550; color: var(--text, #242830); } .ds-input { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); min-width: 0; width: 100%; height: 32px; padding: 4px 8px; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); caret-color: var(--accent, #272b33); } .ds-input::placeholder { color: var(--text-muted, #5b626d); opacity: 1; } .ds-input:focus-visible { outline: 2px solid var(--focus, #454b57); outline-offset: 0; } .ds-input[aria-invalid=\"true\"] { border-color: var(--error, #a32929); } .ds-input:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); } .ds-input::selection { background: var(--selection, #d2d5db); color: var(--text, #242830); }"
     },
     {
       "name": "导航标签",
@@ -393,7 +393,7 @@
       "refersTo": "navigation-selected",
       "description": "目录与搜索共享的导航标签；样例仅呈现外观，不宣称包含应用切换逻辑。",
       "html": "<div class=\"ds-tabs\" role=\"tablist\" aria-label=\"导航方式\"><button class=\"ds-tab\" type=\"button\" role=\"tab\" aria-selected=\"false\" tabindex=\"-1\">目录</button><button class=\"ds-tab\" type=\"button\" role=\"tab\" aria-selected=\"true\">搜索</button></div>",
-      "css": ".ds-tabs { display: flex; gap: 4px; } .ds-tab { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); min-width: 64px; border-color: transparent; } .ds-tab:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-tab:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-tab:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-tab:focus-visible { outline: 2px solid var(--focus, #2469c0); outline-offset: 2px; } .ds-tab[aria-selected=\"true\"] { background: var(--accent-soft, #e8f0fc); color: var(--accent, #195db3); }"
+      "css": ".ds-tabs { display: flex; gap: 4px; } .ds-tab { font: 13px/1.5 var(--font-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif); border-radius: var(--radius-control, 4px); display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 32px; padding: 4px 12px; white-space: nowrap; cursor: pointer; border: 1px solid var(--border, #c9cdd3); color: var(--text, #242830); background: var(--surface, #ffffff); min-width: 64px; border-color: transparent; } .ds-tab:hover:not(:disabled) { background: var(--hover, #eceef1); } .ds-tab:active:not(:disabled) { background: var(--pressed, #dce0e5); } .ds-tab:disabled { color: var(--text-disabled, #747b84); background: var(--surface-subtle, #f6f7f8); cursor: default; } .ds-tab:focus-visible { outline: 2px solid var(--focus, #454b57); outline-offset: 2px; } .ds-tab[aria-selected=\"true\"] { background: var(--accent-soft, #e8e9ec); color: var(--accent, #272b33); }"
     },
     {
       "name": "PDF 纸面",
@@ -406,17 +406,17 @@
   ],
   "narrative": {
     "northStar": "把 PDF 铺开读。",
-    "overview": "PanoPDF 的界面是阅读工具，不是展示页面。用户已批准紧凑工具栏、可收起导航、浅灰阅读背景与系统字体；设计用清楚的分组、稳定的控件尺寸和少量蓝色强调支持阅读，不另创品牌主题。\n\n默认平坦、紧凑、少装饰。白色工具面与灰色阅读底区分操作和内容，PDF 保留自身排版。系统字体随桌面平台变化，不追求不同操作系统逐像素一致。",
+    "overview": "PanoPDF 的界面是阅读工具，不是展示页面。用户已批准紧凑工具栏、可收起导航、浅灰阅读背景与系统字体；设计用清楚的分组、稳定的控件尺寸和少量石墨黑强调支持阅读，不另创品牌主题。\n\n默认平坦、紧凑、少装饰。白色工具面与灰色阅读底区分操作和内容，PDF 保留自身排版。系统字体随桌面平台变化，不追求不同操作系统逐像素一致。",
     "keyCharacteristics": [
       "内容优先，工具占据有限空间。",
-      "白色工具面、冷中性浅灰底、单一蓝色操作强调。",
+      "白色工具面、冷中性浅灰底、单一石墨黑操作强调。",
       "系统字体、小圆角、明确焦点与错误提示。",
       "桌面窗口可收缩，工具栏按分组换行。"
     ],
     "rules": [
       {
         "name": "单一强调",
-        "body": "新增外壳控件复用操作蓝及中性色，不因为功能增加而发明新的主题色。",
+        "body": "新增外壳控件复用石墨黑及中性色，不因为功能增加而发明新的主题色。",
         "section": "colors"
       },
       {

@@ -373,8 +373,11 @@ async function createWindow() {
   listening.file = false;
   listening.command = false;
   listening['window-state'] = false;
+  const iconPath = path.join(__dirname, '../assets/icons/icon.png');
+  if (process.platform === 'darwin' && !app.isPackaged) app.dock?.setIcon(iconPath);
   window = new BrowserWindow({
     title: 'PanoPDF',
+    icon: iconPath,
     width: 1280,
     height: 820,
     minWidth: 800,

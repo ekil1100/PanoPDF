@@ -1,5 +1,7 @@
 node_modules/
 dist/
+build/
+assets/brand/drafts/
 release/
 .agents/
 coverage/

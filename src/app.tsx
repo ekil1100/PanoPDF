@@ -170,7 +170,7 @@ function Application(props: {
     }
   }
   createEffect(() => {
-    document.title = state().activeFile ? `${state().activeFile!.name} — PanoPDF` : 'PanoPDF';
+    document.title = state().activeFile?.name ?? 'PanoPDF';
   });
   function release(): Promise<void> {
     if (disposal) return disposal;
@@ -338,8 +338,8 @@ function Application(props: {
         hidden={!bridge || !isMac || state().windowState.fullscreen}
       >
         <WindowControls action={(action) => controller?.windowAction(action)} />
-        <span class="mac-titlebar-title">
-          {state().activeFile ? `${state().activeFile!.name} — PanoPDF` : 'PanoPDF'}
+        <span class="mac-titlebar-title" hidden={state().phase === 'empty'}>
+          {state().activeFile?.name ?? 'PanoPDF'}
         </span>
       </div>
       <Alert
@@ -411,6 +411,7 @@ function Application(props: {
             state={state()}
             desktop={!!bridge}
             isMac={isMac}
+            dragging={dragging() && !state().password}
             open={openPicker}
             openRecent={(id) => controller?.openRecent(id)}
             openRef={(node) => {
@@ -457,7 +458,11 @@ function Application(props: {
               </Button>
             </div>
           </section>
-          <div id="dropOverlay" class="drop-overlay" hidden={!dragging() || !!state().password}>
+          <div
+            id="dropOverlay"
+            class="drop-overlay"
+            hidden={!dragging() || !!state().password || state().phase === 'empty'}
+          >
             <p>松开以打开 PDF</p>
           </div>
         </main>

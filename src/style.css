@@ -319,51 +319,21 @@ button:not(:where(#viewer *))[aria-expanded='true'] {
   width: min(100%, 400px);
   text-align: center;
 }
-.tagline {
-  font-size: 15px;
-  color: var(--text-muted);
-  margin: 8px 0 24px;
+.brand-logo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 24px;
 }
 .empty-content .primary-button {
-  min-height: 36px;
+  min-height: 40px;
   padding-inline: 16px;
 }
-.open-hint {
-  margin-top: 12px;
-  color: var(--text-muted);
-}
-kbd {
-  font: inherit;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.local-note {
-  margin-top: 4px;
-  font-size: 12px;
-}
-.welcome-intro {
-  color: var(--text-muted);
-  margin-bottom: 20px;
-}
-.welcome-guide {
-  margin: 28px 0 0;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-  text-align: left;
-}
-.welcome-guide > div {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 12px;
-  padding-block: 8px;
-}
-.welcome-guide dt {
-  font-weight: 550;
-}
-.welcome-guide dd {
-  margin: 0;
-  color: var(--text-muted);
-  line-height: 1.6;
+.open-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
 }
 .recent-section {
   margin-top: 32px;
