@@ -1,0 +1,13 @@
+{
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": { "path": "src/ui.css", "variable": true },
+    "color": "neutral",
+    "prefix": "ui-"
+  },
+  "alias": {
+    "component": "./src/components",
+    "ui": "./src/components/ui",
+    "cn": "./src/lib/cn"
+  }
+}

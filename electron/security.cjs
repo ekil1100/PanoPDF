@@ -42,7 +42,7 @@ function validatePath(value) {
   return value;
 }
 function validateWindowAction(value) {
-  if (!['minimize', 'toggle-maximize', 'close'].includes(value)) fail();
+  if (!['minimize', 'toggle-maximize', 'toggle-fullscreen', 'close'].includes(value)) fail();
   return value;
 }
 function validatePosition(value) {

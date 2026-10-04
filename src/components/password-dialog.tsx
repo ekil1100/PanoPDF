@@ -1,108 +1,114 @@
-import { createEffect, createSignal, onCleanup, onMount, untrack } from 'solid-js';
+import { createEffect, createSignal, untrack } from 'solid-js';
 import type { AppState } from '../app-controller';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Alert, AlertDescription } from './ui/alert';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog';
 
 export function PasswordDialog(props: {
   request: AppState['password'];
   resolve(value: string | null): void;
-  focusMenu(): void;
+  focusFallback(): void;
 }) {
-  let dialog!: HTMLDialogElement;
-  let input!: HTMLInputElement;
+  let input: HTMLInputElement | undefined;
   let previousFocus: HTMLElement | null = null;
   let requestId: number | undefined;
   const [value, setValue] = createSignal('');
   const [invalid, setInvalid] = createSignal<boolean | undefined>(undefined);
-  const [mounted, setMounted] = createSignal(false);
-  function restoreFocus() {
-    if (previousFocus?.isConnected && previousFocus.checkVisibility()) previousFocus.focus();
-    else props.focusMenu();
-    previousFocus = null;
-  }
   createEffect(() => {
     const request = props.request;
-    if (!mounted()) return;
     untrack(() => {
       if (request && request.requestId !== requestId) {
-        requestId = request.requestId;
-        if (!dialog.open)
+        if (requestId === undefined)
           previousFocus =
             document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        requestId = request.requestId;
         setValue('');
         setInvalid(request.incorrect);
-        if (!dialog.open) dialog.showModal();
-        input.focus();
-      } else if (!request && requestId !== undefined) {
+        input?.focus();
+      } else if (!request) {
         requestId = undefined;
-        if (dialog.open) dialog.close();
         setValue('');
-        restoreFocus();
+        if (input) input.value = '';
+        input = undefined;
       }
     });
   });
-  onMount(() => setMounted(true));
-  onCleanup(() => {
-    // The shared application disposer settles the controller's password promise.
-    if (dialog.open) dialog.close();
-    input.value = '';
-    previousFocus = null;
-  });
   return (
-    <dialog
-      ref={(node) => {
-        dialog = node;
-      }}
-      id="passwordDialog"
-      aria-labelledby="passwordTitle"
-      aria-describedby="passwordDescription"
-      onCancel={(event) => {
-        event.preventDefault();
-        props.resolve(null);
-      }}
-      onClose={() => {
-        if (!dialog.open && props.request) props.resolve(null);
+    <Dialog
+      open={!!props.request}
+      onOpenChange={(open) => {
+        if (!open) props.resolve(null);
       }}
     >
-      <form
-        id="passwordForm"
-        method="dialog"
-        onSubmit={(event) => {
+      <DialogContent
+        id="passwordDialog"
+        class="ui-max-w-[min(400px,calc(100vw-48px))] ui-p-6"
+        onOpenAutoFocus={(event) => {
           event.preventDefault();
-          props.resolve(value());
+          input?.focus();
         }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          if (previousFocus?.isConnected && previousFocus.checkVisibility()) previousFocus.focus();
+          else props.focusFallback();
+          previousFocus = null;
+        }}
+        onPointerDownOutside={(event) => event.preventDefault()}
       >
-        <h2 id="passwordTitle">此 PDF 需要密码</h2>
-        <p id="passwordDescription">输入文档密码以继续打开。</p>
-        <label class="field-label" for="passwordInput">
-          文档密码
-        </label>
-        <input
-          ref={(node) => {
-            input = node;
+        <form
+          id="passwordForm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            props.resolve(value());
           }}
-          id="passwordInput"
-          type="password"
-          autocomplete="off"
-          aria-describedby="passwordError"
-          autofocus
-          value={value()}
-          aria-invalid={invalid()}
-          onInput={(event) => {
-            setValue(event.currentTarget.value);
-            setInvalid(undefined);
-          }}
-        />
-        <p id="passwordError" class="password-error" role="alert" hidden={!invalid()}>
-          密码不正确，请重试。
-        </p>
-        <div class="dialog-actions">
-          <button id="cancelPassword" type="button" onClick={() => props.resolve(null)}>
-            取消
-          </button>
-          <button id="submitPassword" class="primary-button" type="submit">
-            打开文档
-          </button>
-        </div>
-      </form>
-    </dialog>
+        >
+          <DialogTitle id="passwordTitle">此 PDF 需要密码</DialogTitle>
+          <DialogDescription id="passwordDescription" class="ui-mt-2 ui-mb-5">
+            输入文档密码以继续打开。
+          </DialogDescription>
+          <Label class="field-label" for="passwordInput">
+            文档密码
+          </Label>
+          <Input
+            ref={(node) => {
+              input = node;
+            }}
+            id="passwordInput"
+            type="password"
+            autocomplete="off"
+            aria-describedby="passwordError"
+            value={value()}
+            aria-invalid={invalid()}
+            onInput={(event) => {
+              setValue(event.currentTarget.value);
+              setInvalid(undefined);
+            }}
+          />
+          <Alert
+            id="passwordError"
+            variant="destructive"
+            class="ui-mt-2 ui-border-0 ui-p-0"
+            hidden={!invalid()}
+          >
+            <AlertDescription>密码不正确，请重试。</AlertDescription>
+          </Alert>
+          <div class="dialog-actions">
+            <Button
+              id="cancelPassword"
+              variant="outline"
+              type="button"
+              onClick={() => props.resolve(null)}
+            >
+              取消
+            </Button>
+            <Button id="submitPassword" type="submit">
+              打开文档
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -13,11 +13,14 @@ import type { AppCommand, DesktopBridge } from './contracts';
 import { createReader } from './reader';
 import { EmptyState } from './components/empty-state';
 import { Icon } from './components/icon';
+import { Button } from './components/ui/button';
+import { Alert, AlertDescription } from './components/ui/alert';
+import { Progress } from './components/ui/progress';
+import { WindowControls } from './components/window-controls';
 import { PasswordDialog } from './components/password-dialog';
 import { ReaderHost } from './components/reader-host';
 import { ReaderToolbar } from './components/reader-toolbar';
 import { Sidebar, type Panel, type SidebarHandle } from './components/sidebar';
-import { TitleBar, type FileMenuHandle } from './components/title-bar';
 
 export interface MountApplicationOptions {
   bridge?: DesktopBridge;
@@ -81,7 +84,6 @@ function Application(props: {
   let emptyOpen!: HTMLButtonElement;
   let errorOpen!: HTMLButtonElement;
   let fileInput!: HTMLInputElement;
-  let menu!: FileMenuHandle;
   let sidebar!: SidebarHandle;
   let panelFocus: HTMLElement | null = null;
   let disposed = false;
@@ -98,14 +100,8 @@ function Application(props: {
   const reader = () => controller!.reader;
   const focusReader = () => container.focus();
   const notice = (message: string) => controller?.notice(message);
-  const openPicker = () => {
-    menu.hide();
-    controller?.openPicker();
-  };
-  const closeDocument = () => {
-    menu.hide();
-    controller?.closeDocument();
-  };
+  const openPicker = () => controller?.openPicker();
+  const closeDocument = () => controller?.closeDocument();
   function showPanel(next: Panel | null, restoreFocus = false) {
     if (disposed || (next && !ready())) return;
     const previous = panel();
@@ -336,42 +332,53 @@ function Application(props: {
   });
   return (
     <>
-      <header class="app-header" aria-label="阅读工具">
-        <TitleBar
-          state={state()}
-          desktop={!!bridge}
-          isMac={isMac}
-          menuRef={(handle) => {
-            menu = handle;
-          }}
-          open={openPicker}
-          closeDocument={closeDocument}
-          windowAction={(action) => controller?.windowAction(action)}
-        />
-        <ReaderToolbar
-          state={state()}
-          panel={panel()}
-          isMac={isMac}
-          reader={reader}
-          showPanel={showPanel}
-          focusReader={focusReader}
-          status={(message) => controller?.setStatus(message)}
-        />
-      </header>
-      <div id="notice" class="notice" role="alert" hidden={!state().notice}>
-        <span id="noticeText">{state().notice}</span>
-        <button
+      <div
+        id="titlebar"
+        class="mac-titlebar"
+        hidden={!bridge || !isMac || state().windowState.fullscreen}
+      >
+        <WindowControls action={(action) => controller?.windowAction(action)} />
+        <span class="mac-titlebar-title">
+          {state().activeFile ? `${state().activeFile!.name} — PanoPDF` : 'PanoPDF'}
+        </span>
+      </div>
+      <Alert
+        id="notice"
+        variant="destructive"
+        class="notice ui-flex ui-items-center ui-gap-3 ui-rounded-none ui-border-x-0 ui-border-t-0 ui-px-3 ui-py-1"
+        hidden={!state().notice}
+      >
+        <AlertDescription id="noticeText" class="ui-flex-1">
+          {state().notice}
+        </AlertDescription>
+        <Button
           id="dismissNotice"
-          class="icon-button"
+          variant="ghost"
+          size="icon"
           type="button"
           aria-label="关闭提示"
           data-icon="close"
           onClick={() => controller?.dismissNotice()}
         >
           <Icon name="close" />
-        </button>
-      </div>
+        </Button>
+      </Alert>
       <div id="workspace" class="workspace">
+        <header
+          class="app-header floating-chrome"
+          aria-label="阅读工具"
+          hidden={state().phase !== 'ready' && state().phase !== 'opening'}
+        >
+          <ReaderToolbar
+            state={state()}
+            panel={panel()}
+            isMac={isMac}
+            reader={reader}
+            showPanel={showPanel}
+            focusReader={focusReader}
+            status={(message) => controller?.setStatus(message)}
+          />
+        </header>
         <Sidebar
           state={state()}
           panel={panel()}
@@ -421,7 +428,7 @@ function Application(props: {
             <p id="loadingFilename" class="muted">
               {state().activeFile?.name ?? ''}
             </p>
-            <progress aria-label="正在读取文档" />
+            <Progress indeterminate class="ui-w-[180px] ui-my-1" aria-label="正在读取文档" />
             <p class="muted">大型文档可能需要稍等片刻。</p>
           </section>
           <section
@@ -431,24 +438,23 @@ function Application(props: {
             hidden={state().phase !== 'error'}
           >
             <h2 id="errorTitle">无法打开 PDF</h2>
-            <p id="errorMessage" role="alert">
-              {state().error}
-            </p>
+            <Alert id="errorMessage" variant="destructive" class="ui-w-auto ui-max-w-[56ch]">
+              <AlertDescription>{state().error}</AlertDescription>
+            </Alert>
             <div class="state-actions">
-              <button
+              <Button
                 ref={(node) => {
                   errorOpen = node;
                 }}
                 id="errorOpen"
-                class="primary-button"
                 type="button"
                 onClick={openPicker}
               >
                 打开其他 PDF
-              </button>
-              <button id="backToEmpty" type="button" onClick={closeDocument}>
+              </Button>
+              <Button id="backToEmpty" variant="outline" type="button" onClick={closeDocument}>
                 返回
-              </button>
+              </Button>
             </div>
           </section>
           <div id="dropOverlay" class="drop-overlay" hidden={!dragging() || !!state().password}>
@@ -456,16 +462,20 @@ function Application(props: {
           </div>
         </main>
       </div>
-      <footer class="statusbar">
-        <span id="statusMessage" role="status" aria-live="polite">
-          {state().status}
-        </span>
+      <span id="statusMessage" class="sr-only" role="status" aria-live="polite">
+        {state().status}
+      </span>
+      <footer
+        class="statusbar floating-chrome"
+        hidden={!ready()}
+        tabindex="0"
+        aria-label="阅读进度"
+      >
         <span id="documentStatus">
           {ready()
             ? `第 ${state().reader!.page} / ${state().reader!.pages} 页 · ${Math.round(state().reader!.scale * 100)}%`
             : ''}
         </span>
-        <span id="storageStatus">{bridge ? '本地文件 · 无需上传' : '浏览器预览 · 仅本次会话'}</span>
       </footer>
       <input
         ref={(node) => {
@@ -486,7 +496,11 @@ function Application(props: {
       <PasswordDialog
         request={state().password}
         resolve={(value) => controller?.resolvePassword(value)}
-        focusMenu={() => menu.focus()}
+        focusFallback={() => {
+          if (ready()) focusReader();
+          else if (state().phase === 'error') errorOpen.focus();
+          else emptyOpen.focus();
+        }}
       />
     </>
   );

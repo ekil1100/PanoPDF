@@ -59,9 +59,16 @@ async function launch(file?: string): Promise<Page> {
   page.on('dialog', (dialog) => {
     if (dialog.type() !== 'beforeunload') void dialog.dismiss();
   });
-  await expect(page.locator('#fileMenuButton')).toBeVisible();
+  await expect(page.locator('#readingArea')).toBeVisible();
+  await expect(page.locator('#fileMenuButton, #fileMenu')).toHaveCount(0);
   return page;
 }
+async function choose(page: Page, id: string, value: string) {
+  await page.locator(`#${id}`).click();
+  await page.locator(`[role="option"][data-value="${value}"]`).click();
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+}
+
 async function jump(page: Page, target: number) {
   await page.locator('#pageNumber').fill(String(target));
   await page.locator('#pageNumber').press('Enter');
@@ -74,7 +81,7 @@ test('offline desktop reading, selection, search, outline, layouts, and restorat
   page.on('pageerror', (error) => errors.push(error.message));
   await expect(page.locator('#pageTotal')).toHaveText('/ 12');
   await expect(page.locator('#pageNumber')).toBeEnabled();
-  await page.locator('#zoomMode').selectOption('pages-3');
+  await choose(page, 'zoomMode', 'pages-3');
   await expect(page.locator('#viewer .page canvas').first()).toBeVisible();
   await expect(page.locator('#viewer .textLayer').first()).toContainText('panorama');
   await expect(page.locator('#viewer .textLayer').first()).toBeVisible();
@@ -135,7 +142,7 @@ test('offline desktop reading, selection, search, outline, layouts, and restorat
   await expect(page.locator('#pageNumber')).toHaveValue('4');
   await page.locator('#closePanel').click();
 
-  await page.locator('#layoutMode').selectOption('vertical');
+  await choose(page, 'layoutMode', 'vertical');
   await page.locator('#columns').fill('3');
   await page.locator('#columns').press('Enter');
   await jump(page, 1);
@@ -147,18 +154,211 @@ test('offline desktop reading, selection, search, outline, layouts, and restorat
   expect(rows[3]).toBeGreaterThan(rows[2]);
   await page.screenshot({ path: testInfo.outputPath('vertical.png') });
 
-  await page.locator('#layoutMode').selectOption('horizontal');
+  await choose(page, 'layoutMode', 'horizontal');
   await page.locator('#zoomPercent').fill('55%');
   await page.locator('#zoomPercent').press('Enter');
   await jump(page, 7);
   await page.screenshot({ path: testInfo.outputPath('horizontal.png') });
-  await page.locator('#fileMenuButton').click();
-  await page.locator('#closeFile').click();
+  await closeDocument(page);
   await expect(page.locator('#emptyState')).toBeVisible();
   await page.getByRole('button', { name: /a.pdf/ }).click();
   await expect(page.locator('#pageNumber')).toHaveValue('7');
   await expect(page.locator('#zoomPercent')).toHaveValue('55%');
   expect(errors).toEqual([]);
+});
+
+test('floating chrome reveals on hover and focus without reducing the reading area', async () => {
+  const page = await launch(documentA);
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  await page.locator('#viewerContainer').focus();
+  await page.mouse.move(400, 300);
+  const toolbar = page.locator('.app-header');
+  const footer = page.locator('.statusbar');
+  await expect(toolbar).toHaveCSS('opacity', '0');
+  await expect(footer).toHaveCSS('opacity', '0');
+  await expect(page.locator('#filename, #windowControls, #storageStatus')).toHaveCount(0);
+  await expect(page.locator('#titlebar')).toBeVisible({ visible: process.platform === 'darwin' });
+  expect(
+    await application!.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0]!.getTitle(),
+    ),
+  ).toBe('a.pdf — PanoPDF');
+  const before = await page.locator('#readingArea').boundingBox();
+  expect(before).not.toBeNull();
+  const viewport = await page.evaluate(() => ({ width: innerWidth, height: innerHeight }));
+  const titlebarHeight = process.platform === 'darwin' ? 32 : 0;
+  expect(before!.y).toBe(titlebarHeight);
+  expect(before!.height).toBe(viewport.height - titlebarHeight);
+  await toolbar.hover({ position: { x: (await toolbar.boundingBox())!.width - 20, y: 16 } });
+  await expect(toolbar).toHaveCSS('opacity', '1');
+  await page.mouse.move(400, 300);
+  await expect(toolbar).toHaveCSS('opacity', '0');
+  await page.locator('#pageNumber').focus();
+  await expect(toolbar).toHaveCSS('opacity', '1');
+  await page.locator('#viewerContainer').focus();
+  await footer.hover();
+  await expect(footer).toHaveCSS('opacity', '1');
+  await expect(page.locator('#documentStatus')).toHaveText(/第 1 \/ 12 页 · \d+%/);
+  expect(await page.locator('#readingArea').boundingBox()).toEqual(before);
+  await page.mouse.move(400, 300);
+  await expect(footer).toHaveCSS('opacity', '0');
+});
+
+test('native frame reader uses the full content width and fits the requested pages', async ({}, testInfo) => {
+  const page = await launch(documentA);
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  const drag = page.locator('#windowDragRegion');
+  await expect(drag).toHaveCount(0);
+  await page.locator('#viewerContainer').focus();
+  await expect.soft(page.locator('#viewerContainer')).toHaveCSS('outline-style', 'none');
+  const geometry = await page.evaluate(() => {
+    const container = document.getElementById('viewerContainer')!;
+    const bounds = container.getBoundingClientRect();
+    return {
+      left: bounds.left,
+      right: innerWidth - bounds.right,
+      overflow: getComputedStyle(container).overflowX,
+      documentWidth: document.documentElement.scrollWidth,
+      windowWidth: innerWidth,
+    };
+  });
+  expect(geometry.left).toBe(0);
+  expect(geometry.right).toBe(0);
+  expect(geometry.overflow).toBe('auto');
+  expect(geometry.documentWidth).toBe(geometry.windowWidth);
+  const frame = await application!.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0]!;
+    return { outer: window.getBounds(), content: window.getContentBounds() };
+  });
+  if (process.platform === 'darwin') {
+    await expect(page.locator('#titlebar')).toHaveCSS('background-color', 'rgb(231, 233, 237)');
+    await expect(page.locator('#titlebar')).toHaveCSS('-webkit-app-region', 'drag');
+    await expect(page.locator('#titlebar')).toHaveText('a.pdf — PanoPDF');
+  } else {
+    expect(frame.outer.height).toBeGreaterThan(frame.content.height);
+  }
+  await choose(page, 'zoomMode', 'pages-2');
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const container = document.getElementById('viewerContainer')!.getBoundingClientRect();
+        const pages = [...document.querySelectorAll('#viewer .page')].slice(0, 2);
+        return (
+          pages.length === 2 &&
+          pages.every((node) => {
+            const page = node.getBoundingClientRect();
+            return (
+              page.left >= container.left &&
+              page.right <= container.right &&
+              page.top >= container.top &&
+              page.bottom <= container.bottom
+            );
+          })
+        );
+      }),
+    )
+    .toBe(true);
+  await page.locator('#viewerContainer').focus();
+  await page.mouse.move(400, 300);
+  await page.screenshot({ path: testInfo.outputPath('native-frame-reader-edges.png') });
+});
+
+test('shadcn window controls stay circular and invoke native fullscreen', async () => {
+  test.skip(process.platform !== 'darwin', 'Custom titlebar is macOS-only');
+  const page = await launch(documentA);
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  for (const id of ['closeWindow', 'minimizeWindow', 'maximizeWindow']) {
+    const button = page.locator(`#${id}`);
+    await expect(button).toHaveClass(/ui-base/);
+    const box = await button.boundingBox();
+    expect(box!.width).toBe(12);
+    expect(box!.height).toBe(12);
+    await expect(button).toHaveCSS('border-radius', '50%');
+    await expect(button).toHaveCSS('-webkit-app-region', 'no-drag');
+  }
+  await page.locator('#maximizeWindow').click();
+  await expect
+    .poll(() => page.evaluate(() => window.panopdf!.getWindowState()))
+    .toMatchObject({ fullscreen: true });
+  await expect(page.locator('#titlebar')).toBeHidden();
+  await application!.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0]!.setFullScreen(false),
+  );
+  await expect(page.locator('#titlebar')).toBeVisible();
+});
+
+test('shadcn selects and tabs preserve keyboard navigation, focus and reading state', async () => {
+  const page = await launch(documentA);
+  await expect(page.locator('#pageNumber')).toBeEnabled();
+  await expect(page.locator('#readerToolbar select')).toHaveCount(0);
+  const layout = page.locator('#layoutMode');
+  await layout.focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.mouse.move(400, 500);
+  await expect(page.locator('.app-header')).toHaveCSS('opacity', '1');
+  await page.keyboard.press('End');
+  await page.keyboard.press('Enter');
+  await expect(layout).toContainText('纵向滚动');
+  await expect(layout).toBeFocused();
+  await expect(page.locator('#columnsControl')).toBeVisible();
+  await expect(page.locator('#scrollInput')).toBeHidden();
+  await choose(page, 'layoutMode', 'horizontal');
+  await page.locator('#scrollInput').click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(page.locator('#scrollInput')).toBeFocused();
+  await choose(page, 'zoomMode', 'pages-2');
+  await choose(page, 'zoomMode', 'actual');
+  await expect(page.locator('#zoomPercent')).toHaveValue('100%');
+  await expect(page.locator('#zoomMode')).toContainText('自定义缩放');
+  await choose(page, 'zoomMode', 'pages-2');
+  await choose(page, 'zoomMode', 'custom');
+  await expect(page.locator('#zoomPercent')).toBeFocused();
+  await expect(page.locator('#zoomMode')).toContainText('容纳 2 页');
+  await page.locator('#outlineToggle').click();
+  await page.locator('#outlineTab').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#searchTab')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#searchTab')).toBeFocused();
+  await page.getByLabel('在文档中查找', { exact: true }).fill('panorama');
+  await expect(page.locator('#findCount')).toContainText('/ 12 处');
+  await page.locator('#searchTab').focus();
+  await page.keyboard.press('Home');
+  await expect(page.locator('#outlineTab')).toBeFocused();
+  await expect(page.locator('#searchPanel')).toBeHidden();
+  await page.keyboard.press('End');
+  await expect(page.locator('#searchTab')).toBeFocused();
+  await expect(page.locator('#searchQuery')).toHaveValue('panorama');
+  const panelId = await page.locator('#searchTab').getAttribute('aria-controls');
+  expect(panelId).toBe('searchPanel');
+  await page.locator('#layoutMode').click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(page.locator('#sidebar')).toBeVisible();
+});
+
+test('shadcn zoom options disable page counts unavailable in a short document', async () => {
+  await writeFile(documentA, await scannedFixture());
+  const page = await launch(documentA);
+  await expect(page.locator('#pageTotal')).toHaveText('/ 3');
+  await page.locator('#zoomMode').click();
+  await expect(page.locator('[role="option"][data-value="pages-4"]')).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
+  await page.keyboard.press('End');
+  await expect(page.locator('[role="option"][data-value="actual"]')).toHaveAttribute(
+    'data-highlighted',
+    '',
+  );
+  await page.keyboard.press('ArrowUp');
+  await expect(page.locator('[role="option"][data-value="pages-3"]')).toHaveAttribute(
+    'data-highlighted',
+    '',
+  );
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#zoomMode')).toContainText('容纳 3 页');
 });
 
 test('queued native reopening preserves newer unsaved reading position', async () => {
@@ -210,7 +410,7 @@ test('queued native reopening preserves newer unsaved reading position', async (
   await expect
     .poll(() => application!.evaluate(() => (globalThis as any).testNativeEvents))
     .toEqual(['b.pdf', 'a.pdf']);
-  await expect(page.locator('#filename')).toHaveText('a.pdf');
+  await expect(page).toHaveTitle('a.pdf — PanoPDF');
   await expect(page.locator('#pageNumber')).toBeEnabled();
   await expect(page.locator('#pageNumber')).toHaveValue('7');
   await expect
@@ -274,7 +474,7 @@ test('first launch shows guidance once and keeps the toolbar out of the welcome 
   );
   await expect(page.locator('#readerToolbar')).toBeHidden();
   await expect(page.locator('.document-bar')).toHaveCount(0);
-  await expect(page.locator('#openFile')).toBeHidden();
+  await expect(page.locator('.app-header')).toBeHidden();
   await expect(page.locator('#emptyOpen')).toBeEnabled();
   await application!.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0]!.setSize(1440, 900),
@@ -297,11 +497,10 @@ test('next application launch automatically restores the last document and readi
   await jump(page, 6);
   await quitApplication();
   page = await launch();
-  await expect(page.locator('#filename')).toHaveText('a.pdf');
+  await expect(page).toHaveTitle('a.pdf — PanoPDF');
   await expect(page.locator('#pageNumber')).toHaveValue('6');
   await expect(page.locator('#welcomeGuide')).toBeHidden();
-  await page.locator('#fileMenuButton').click();
-  await page.locator('#closeFile').click();
+  await closeDocument(page);
   await expect(page.locator('#emptyState')).toBeVisible();
   await expect(page.locator('#readerToolbar')).toBeHidden();
   // Closing a document does not immediately reopen it in the same window.
@@ -312,7 +511,7 @@ test('next application launch automatically restores the last document and readi
 test('an explicit startup file wins over the previous document', async () => {
   await seedRecent(documentA, 7);
   const page = await launch(documentB);
-  await expect(page.locator('#filename')).toHaveText('b.pdf');
+  await expect(page).toHaveTitle('b.pdf — PanoPDF');
   await expect(page.locator('#pageNumber')).toBeEnabled();
   await expect(page.locator('#pageNumber')).toHaveValue('1');
   const settings = JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8'));
@@ -321,7 +520,7 @@ test('an explicit startup file wins over the previous document', async () => {
   ).toBe(7);
 });
 
-test('missing last file is recoverable through the file menu and custom window controls work', async ({}, testInfo) => {
+test('missing last file is recoverable through the open shortcut and window controls work', async ({}, testInfo) => {
   await seedRecent(path.join(directory, 'missing.pdf'));
   const page = await launch();
   await expect(page.locator('#noticeText')).toContainText('文件已移动或删除');
@@ -329,30 +528,21 @@ test('missing last file is recoverable through the file menu and custom window c
   await application!.evaluate(({ dialog }, file) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, documentA);
-  await page.locator('#fileMenuButton').focus();
-  await page.keyboard.press('ArrowDown');
-  await expect(page.locator('#fileMenu')).toBeVisible();
-  await expect(page.locator('#openFile')).toBeFocused();
-  await page.keyboard.press('Escape');
-  await expect(page.locator('#fileMenu')).toBeHidden();
-  await expect(page.locator('#fileMenuButton')).toBeFocused();
-  await page.locator('#fileMenuButton').click();
-  await page.locator('#openFile').click();
-  await expect(page.locator('#filename')).toHaveText('a.pdf');
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+o' : 'Control+o');
+  await expect(page).toHaveTitle('a.pdf — PanoPDF');
   await expect(page.locator('#pageNumber')).toBeEnabled();
-  await expect(page.locator('#fileMenu')).toBeHidden();
+  await expect(page.locator('#fileMenu')).toHaveCount(0);
+  await expect(page.locator('#notice')).toHaveAttribute('role', 'alert');
+  await expect(page.locator('#notice')).toHaveClass(/ui-base/);
   await page.locator('#dismissNotice').click();
-  await page.locator('#zoomMode').selectOption('pages-3');
-  await page.screenshot({ path: testInfo.outputPath('custom-titlebar-reader.png') });
+  await expect(page.locator('#notice')).toBeHidden();
+  await choose(page, 'zoomMode', 'pages-3');
+  await page.screenshot({ path: testInfo.outputPath('native-titlebar-reader.png') });
 
+  await expect(page.locator('#titlebar')).toBeVisible({ visible: process.platform === 'darwin' });
   expect(
     await page
-      .locator('#titlebar')
-      .evaluate((node) => getComputedStyle(node).getPropertyValue('-webkit-app-region')),
-  ).toBe('drag');
-  expect(
-    await page
-      .locator('#fileMenuButton')
+      .locator('#outlineToggle')
       .evaluate((node) => getComputedStyle(node).getPropertyValue('-webkit-app-region')),
   ).toBe('no-drag');
   // Small CI displays can start with a screen-sized window. Establish the normal state first.
@@ -364,16 +554,29 @@ test('missing last file is recoverable through the file menu and custom window c
   await expect
     .poll(() => page.evaluate(() => window.panopdf!.getWindowState()))
     .toMatchObject({ maximized: false });
-  await page.locator('#maximizeWindow').click();
+  if (process.platform === 'darwin')
+    await page.locator('#maximizeWindow').click({ modifiers: ['Alt'] });
+  else
+    await application!.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0]!.maximize(),
+    );
   await expect
     .poll(() => page.evaluate(() => window.panopdf!.getWindowState()))
     .toMatchObject({ maximized: true });
-  await expect(page.locator('#maximizeWindow')).toHaveAttribute('aria-label', '还原窗口');
-  await page.locator('#maximizeWindow').click();
+  if (process.platform === 'darwin')
+    await page.locator('#maximizeWindow').click({ modifiers: ['Alt'] });
+  else
+    await application!.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0]!.unmaximize(),
+    );
   await expect
     .poll(() => page.evaluate(() => window.panopdf!.getWindowState()))
     .toMatchObject({ maximized: false });
-  await page.locator('#minimizeWindow').click();
+  if (process.platform === 'darwin') await page.locator('#minimizeWindow').click();
+  else
+    await application!.evaluate(({ BrowserWindow }) =>
+      BrowserWindow.getAllWindows()[0]!.minimize(),
+    );
   await expect
     .poll(() =>
       application!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMinimized()),
@@ -386,7 +589,9 @@ test('missing last file is recoverable through the file menu and custom window c
   });
   await jump(page, 5);
   const closed = page.waitForEvent('close');
-  await page.locator('#closeWindow').click();
+  if (process.platform === 'darwin') await page.locator('#closeWindow').click();
+  else
+    await application!.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.close());
   await closed;
   await expect
     .poll(
@@ -430,8 +635,7 @@ test('a pending resize must not overwrite navigation before the next frame', asy
       }),
   );
   expect(settledPage).toBe('7');
-  await page.locator('#fileMenuButton').click();
-  await page.locator('#closeFile').click();
+  await closeDocument(page);
   await expect(page.locator('#emptyState')).toBeVisible();
   expect(
     JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8')).recents[0].position
@@ -449,8 +653,7 @@ async function pickDocument(page: Page, file: string) {
 }
 
 async function closeDocument(page: Page) {
-  await page.locator('#fileMenuButton').click();
-  await page.locator('#closeFile').click();
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+w' : 'Control+w');
   await expect(page.locator('#emptyState')).toBeVisible();
 }
 
@@ -463,13 +666,21 @@ test('opening keeps a measurable host and UI updates preserve viewer and PDF pag
   const page = await launch();
   await page.evaluate(() => {
     const host = document.getElementById('viewerContainer')!;
-    const samples: { width: number; height: number; hidden: boolean }[] = [];
+    const samples: { width: number; height: number; hidden: boolean; indeterminate: boolean }[] =
+      [];
     const observer = new MutationObserver(() => {
       if (document.getElementById('readingArea')!.getAttribute('aria-busy') !== 'true') return;
       // Opening first closes the previous (possibly empty) reader. Only opening shows the toolbar.
       if (document.getElementById('readerToolbar')!.hidden) return;
       const rect = host.getBoundingClientRect();
-      samples.push({ width: rect.width, height: rect.height, hidden: host.hidden !== false });
+      const progress = document.querySelector('#loadingState [role="progressbar"]');
+      samples.push({
+        width: rect.width,
+        height: rect.height,
+        hidden: host.hidden !== false,
+        indeterminate:
+          !!progress?.hasAttribute('data-indeterminate') && !progress.hasAttribute('aria-valuenow'),
+      });
     });
     observer.observe(document.getElementById('readingArea')!, { attributes: true, subtree: true });
     (window as any).__openingEvidence = {
@@ -485,11 +696,18 @@ test('opening keeps a measurable host and UI updates preserve viewer and PDF pag
     const evidence = (window as any).__openingEvidence;
     evidence.observer.disconnect();
     evidence.page = document.querySelector('#viewer .page');
-    return evidence.samples as { width: number; height: number; hidden: boolean }[];
+    return evidence.samples as {
+      width: number;
+      height: number;
+      hidden: boolean;
+      indeterminate: boolean;
+    }[];
   });
   expect(opening.length).toBeGreaterThan(0);
   expect(
-    opening.every((sample) => sample.width > 0 && sample.height > 0 && !sample.hidden),
+    opening.every(
+      (sample) => sample.width > 0 && sample.height > 0 && !sample.hidden && sample.indeterminate,
+    ),
     JSON.stringify(opening),
   ).toBe(true);
   const stable = () =>
@@ -511,13 +729,13 @@ test('opening keeps a measurable host and UI updates preserve viewer and PDF pag
   await expect(page.locator('#pageNumber')).toHaveValue('4');
   expect(await stable()).toBe(true);
   await page.locator('#closePanel').click();
-  await page.locator('#scrollInput').selectOption('smooth');
-  await page.locator('#fileMenuButton').click();
+  await choose(page, 'scrollInput', 'smooth');
+  await page.locator('#scrollInput').click();
   await page.keyboard.press('Escape');
   expect(await stable()).toBe(true);
   // Layout/zoom may replace canvases, but PDF.js page and host nodes remain owned by the reader.
   await page.locator('#zoomIn').click();
-  await page.locator('#layoutMode').selectOption('vertical');
+  await choose(page, 'layoutMode', 'vertical');
   expect(await stable()).toBe(true);
 });
 
@@ -562,7 +780,7 @@ test('focused page, zoom and column drafts survive reader state changes and Esca
   await expect(page.locator('#zoomPercent')).toHaveValue('137%');
   await page.locator('#zoomPercent').press('Escape');
   await expect(page.locator('#zoomPercent')).toHaveValue(zoom);
-  await page.locator('#layoutMode').selectOption('vertical');
+  await choose(page, 'layoutMode', 'vertical');
   await page.locator('#columns').fill('4');
   await page.locator('#zoomIn').dispatchEvent('click');
   await expect(page.locator('#columns')).toHaveValue('4');
@@ -631,7 +849,7 @@ test('password incorrect, cancel and recovery release the worker and preserve op
   await page.locator('#cancelPassword').click();
   await expect(page.locator('#passwordDialog')).toBeHidden();
   await expect(page.locator('#emptyState')).toBeVisible();
-  await expect(page.locator('#passwordInput')).toHaveValue('');
+  await expect(page.locator('#passwordInput')).toHaveCount(0);
   await expect.poll(() => page.workers().length).toBe(0);
   await page.getByRole('button', { name: /encrypted.pdf/ }).click();
   await expect(page.locator('#passwordDialog')).toBeVisible();

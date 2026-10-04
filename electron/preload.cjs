@@ -4,7 +4,7 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 const callbacks = { file: new Set(), command: new Set(), 'window-state': new Set() };
 const commands = new Set(['open', 'close-document', 'find', 'zoom-in', 'zoom-out', 'actual-size']);
-const windowActions = new Set(['minimize', 'toggle-maximize', 'close']);
+const windowActions = new Set(['minimize', 'toggle-maximize', 'toggle-fullscreen', 'close']);
 let startupAcknowledgement;
 function acknowledgeStartup() {
   // Let the bridged promise's renderer continuations run before enabling native events.

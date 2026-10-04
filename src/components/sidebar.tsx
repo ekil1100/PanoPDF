@@ -2,6 +2,10 @@ import { createSignal, For, onCleanup, Show } from 'solid-js';
 import type { AppState } from '../app-controller';
 import type { FindState, OutlineEntry, ReaderController } from '../contracts';
 import { Icon } from './icon';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 export type Panel = 'outline' | 'search';
 export interface SidebarHandle {
@@ -86,21 +90,6 @@ export function Sidebar(props: {
     disposed = true;
     clearTimeout(timer);
   });
-  function tabKey(event: KeyboardEvent, name: Panel) {
-    if (event.isComposing || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key))
-      return;
-    event.preventDefault();
-    const next =
-      event.key === 'Home'
-        ? 'outline'
-        : event.key === 'End'
-          ? 'search'
-          : name === 'outline'
-            ? 'search'
-            : 'outline';
-    props.showPanel(next);
-    (next === 'outline' ? outlineTab : searchTab).focus();
-  }
   function OutlineList(list: { entries: OutlineEntry[]; id?: string; hidden?: boolean }) {
     return (
       <ul class="outline-list" id={list.id} hidden={list.hidden}>
@@ -118,8 +107,10 @@ export function Sidebar(props: {
                     when={entry.children.length > 0}
                     fallback={<span class="outline-spacer" aria-hidden="true" />}
                   >
-                    <button
-                      class="icon-button outline-disclosure"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      class="icon-button outline-disclosure ui-w-6 ui-p-1 aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
                       type="button"
                       aria-label={`${expanded() ? '收起' : '展开'}“${label}”`}
                       aria-expanded={expanded()}
@@ -127,11 +118,12 @@ export function Sidebar(props: {
                       onClick={() => setExpanded((value) => !value)}
                     >
                       <Icon name={expanded() ? 'down' : 'next'} />
-                    </button>
+                    </Button>
                   </Show>
-                  <button
+                  <Button
+                    variant="ghost"
                     type="button"
-                    class="outline-link"
+                    class="outline-link ui-h-auto ui-whitespace-normal ui-justify-start ui-text-left ui-px-2 ui-py-1.5 ui-leading-normal"
                     disabled={entry.target === null || entry.target === undefined}
                     onClick={() => {
                       if (!ready()) return;
@@ -146,7 +138,7 @@ export function Sidebar(props: {
                     }}
                   >
                     {label}
-                  </button>
+                  </Button>
                 </div>
                 <Show when={entry.children.length > 0}>
                   <OutlineList entries={entry.children} id={childrenId} hidden={!expanded()} />
@@ -160,148 +152,154 @@ export function Sidebar(props: {
   }
   return (
     <aside id="sidebar" class="reader-sidebar" aria-label="文档导航" hidden={!props.panel}>
-      <div class="sidebar-header">
-        <div class="panel-tabs" role="tablist" aria-label="导航方式">
-          <button
-            ref={(node) => {
-              outlineTab = node;
-            }}
-            id="outlineTab"
+      <Tabs
+        class="ui-flex ui-min-h-0 ui-flex-1 ui-flex-col"
+        value={props.panel ?? 'outline'}
+        onChange={(value) => {
+          if (value !== 'outline' && value !== 'search') return;
+          props.showPanel(value);
+          (value === 'outline' ? outlineTab : searchTab).focus();
+        }}
+      >
+        <div class="sidebar-header">
+          <TabsList class="panel-tabs" aria-label="导航方式">
+            <TabsTrigger
+              value="outline"
+              ref={(node) => {
+                outlineTab = node;
+              }}
+              id="outlineTab"
+              type="button"
+            >
+              目录
+            </TabsTrigger>
+            <TabsTrigger
+              value="search"
+              ref={(node) => {
+                searchTab = node;
+              }}
+              id="searchTab"
+              type="button"
+            >
+              搜索
+            </TabsTrigger>
+          </TabsList>
+          <Button
+            variant="ghost"
+            id="closePanel"
+            size="icon"
+            class="icon-button"
             type="button"
-            role="tab"
-            aria-selected={props.panel === 'outline'}
-            aria-controls="outlinePanel"
-            tabindex={props.panel === 'outline' ? 0 : -1}
-            onClick={() => props.showPanel('outline')}
-            onKeyDown={(event) => tabKey(event, 'outline')}
+            aria-label="收起侧栏"
+            title="收起侧栏（Esc）"
+            data-icon="close"
+            onClick={() => props.showPanel(null, true)}
           >
-            目录
-          </button>
-          <button
-            ref={(node) => {
-              searchTab = node;
-            }}
-            id="searchTab"
-            type="button"
-            role="tab"
-            aria-selected={props.panel === 'search'}
-            aria-controls="searchPanel"
-            tabindex={props.panel === 'search' ? 0 : -1}
-            onClick={() => props.showPanel('search')}
-            onKeyDown={(event) => tabKey(event, 'search')}
-          >
-            搜索
-          </button>
+            <Icon name="close" />
+          </Button>
         </div>
-        <button
-          id="closePanel"
-          class="icon-button"
-          type="button"
-          aria-label="收起侧栏"
-          title="收起侧栏（Esc）"
-          data-icon="close"
-          onClick={() => props.showPanel(null, true)}
+        <TabsContent
+          value="outline"
+          forceMount
+          id="outlinePanel"
+          class="panel-content ui-px-2 ui-py-3"
+          hidden={props.panel !== 'outline'}
         >
-          <Icon name="close" />
-        </button>
-      </div>
-      <section
-        id="outlinePanel"
-        class="panel-content"
-        role="tabpanel"
-        aria-labelledby="outlineTab"
-        hidden={props.panel !== 'outline'}
-      >
-        <p id="outlineEmpty" class="muted panel-message" hidden={props.state.outline.length > 0}>
-          此文档没有目录。可通过页码或搜索定位内容。
-        </p>
-        <nav id="outline" aria-label="文档目录">
-          <OutlineList entries={props.state.outline} />
-        </nav>
-      </section>
-      <section
-        id="searchPanel"
-        class="panel-content"
-        role="tabpanel"
-        aria-labelledby="searchTab"
-        hidden={props.panel !== 'search'}
-      >
-        <label class="field-label" for="searchQuery">
-          在文档中查找
-        </label>
-        <input
-          ref={(node) => {
-            searchInput = node;
-          }}
-          id="searchQuery"
-          type="search"
-          placeholder="输入文字"
-          autocomplete="off"
-          spellcheck={false}
-          data-reader
-          disabled={!ready()}
-          value={query()}
-          onInput={(event) => {
-            setQuery(event.currentTarget.value);
-            scheduleSearch();
-          }}
-          onCompositionStart={() => {
-            composing = true;
-            clearTimeout(timer);
-          }}
-          onCompositionEnd={(event) => {
-            composing = false;
-            setQuery(event.currentTarget.value);
-            scheduleSearch();
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.isComposing && !composing) {
-              event.preventDefault();
-              search(event.shiftKey, true);
-            }
-          }}
-        />
-        <div class="search-navigation">
-          <span id="findCount" role="status" aria-live="polite">
-            {!hasQuery()
-              ? '输入文字开始搜索'
-              : found().pending
-                ? '正在搜索…'
-                : noMatches()
-                  ? '未找到匹配'
-                  : `${found().current} / ${found().total} 处`}
-          </span>
-          <button
-            id="previousFind"
-            class="icon-button"
-            type="button"
-            aria-label="上一个匹配"
-            title="上一个匹配（Shift+Enter）"
-            data-icon="up"
-            disabled={!canNavigate()}
-            onClick={() => search(true, true)}
-          >
-            <Icon name="up" />
-          </button>
-          <button
-            id="nextFind"
-            class="icon-button"
-            type="button"
-            aria-label="下一个匹配"
-            title="下一个匹配（Enter）"
-            data-icon="down"
-            disabled={!canNavigate()}
-            onClick={() => search(false, true)}
-          >
-            <Icon name="down" />
-          </button>
-        </div>
-        <p id="findHelp" class="muted panel-message">
-          {hasQuery() && !found().pending && noMatches()
-            ? '试试更短的词，或检查拼写。扫描版 PDF 可能不含可搜索的文字。'
-            : '匹配内容会在页面中高亮显示。'}
-        </p>
-      </section>
+          <p id="outlineEmpty" class="muted panel-message" hidden={props.state.outline.length > 0}>
+            此文档没有目录。可通过页码或搜索定位内容。
+          </p>
+          <nav id="outline" aria-label="文档目录">
+            <OutlineList entries={props.state.outline} />
+          </nav>
+        </TabsContent>
+        <TabsContent
+          value="search"
+          forceMount
+          id="searchPanel"
+          class="panel-content ui-px-3 ui-py-4"
+          hidden={props.panel !== 'search'}
+        >
+          <Label class="field-label" for="searchQuery">
+            在文档中查找
+          </Label>
+          <Input
+            ref={(node) => {
+              searchInput = node;
+            }}
+            id="searchQuery"
+            type="search"
+            placeholder="输入文字"
+            autocomplete="off"
+            spellcheck={false}
+            data-reader
+            disabled={!ready()}
+            value={query()}
+            onInput={(event) => {
+              setQuery(event.currentTarget.value);
+              scheduleSearch();
+            }}
+            onCompositionStart={() => {
+              composing = true;
+              clearTimeout(timer);
+            }}
+            onCompositionEnd={(event) => {
+              composing = false;
+              setQuery(event.currentTarget.value);
+              scheduleSearch();
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.isComposing && !composing) {
+                event.preventDefault();
+                search(event.shiftKey, true);
+              }
+            }}
+          />
+          <div class="search-navigation">
+            <span id="findCount" role="status" aria-live="polite">
+              {!hasQuery()
+                ? '输入文字开始搜索'
+                : found().pending
+                  ? '正在搜索…'
+                  : noMatches()
+                    ? '未找到匹配'
+                    : `${found().current} / ${found().total} 处`}
+            </span>
+            <Button
+              variant="ghost"
+              id="previousFind"
+              size="icon"
+              class="icon-button"
+              type="button"
+              aria-label="上一个匹配"
+              title="上一个匹配（Shift+Enter）"
+              data-icon="up"
+              disabled={!canNavigate()}
+              onClick={() => search(true, true)}
+            >
+              <Icon name="up" />
+            </Button>
+            <Button
+              variant="ghost"
+              id="nextFind"
+              size="icon"
+              class="icon-button"
+              type="button"
+              aria-label="下一个匹配"
+              title="下一个匹配（Enter）"
+              data-icon="down"
+              disabled={!canNavigate()}
+              onClick={() => search(false, true)}
+            >
+              <Icon name="down" />
+            </Button>
+          </div>
+          <p id="findHelp" class="muted panel-message">
+            {hasQuery() && !found().pending && noMatches()
+              ? '试试更短的词，或检查拼写。扫描版 PDF 可能不含可搜索的文字。'
+              : '匹配内容会在页面中高亮显示。'}
+          </p>
+        </TabsContent>
+      </Tabs>
     </aside>
   );
 }

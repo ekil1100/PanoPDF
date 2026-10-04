@@ -1,6 +1,7 @@
 import { For } from 'solid-js';
 import type { AppState } from '../app-controller';
 import { Icon } from './icon';
+import { Button } from './ui/button';
 
 export function EmptyState(props: {
   state: AppState;
@@ -25,7 +26,7 @@ export function EmptyState(props: {
         <p id="welcomeIntro" class="welcome-intro" hidden={!props.state.firstRun}>
           打开第一份 PDF，找到适合你的阅读方式。
         </p>
-        <button
+        <Button
           ref={props.openRef}
           id="emptyOpen"
           class="primary-button"
@@ -36,7 +37,7 @@ export function EmptyState(props: {
         >
           <Icon name="open" />
           <span>打开本地 PDF</span>
-        </button>
+        </Button>
         <p class="open-hint">
           或将 PDF 拖到此处 · <kbd id="openShortcut">{props.isMac ? '⌘ O' : 'Ctrl O'}</kbd>
         </p>
@@ -70,16 +71,17 @@ export function EmptyState(props: {
             <For each={recent()}>
               {(file) => (
                 <li>
-                  <button
+                  <Button
                     type="button"
-                    class="recent-button"
+                    variant="ghost"
+                    class="recent-button ui-h-auto ui-min-h-11 ui-w-full ui-justify-start ui-text-left ui-rounded-none ui-px-1 ui-py-2"
                     title={file.name}
                     onClick={() => props.openRecent(file.id)}
                   >
                     <Icon name="document" />
                     <span class="recent-name">{file.name}</span>
                     <span class="recent-page">第 {file.page} 页</span>
-                  </button>
+                  </Button>
                 </li>
               )}
             </For>

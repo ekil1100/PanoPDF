@@ -36,7 +36,7 @@ export type AppCommand =
   | 'zoom-in'
   | 'zoom-out'
   | 'actual-size';
-export type WindowAction = 'minimize' | 'toggle-maximize' | 'close';
+export type WindowAction = 'minimize' | 'toggle-maximize' | 'toggle-fullscreen' | 'close';
 export interface WindowState {
   maximized: boolean;
   fullscreen: boolean;

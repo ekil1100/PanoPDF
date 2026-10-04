@@ -1,4 +1,5 @@
 import { createEffect, createMemo, createSignal, untrack } from 'solid-js';
+import { Input } from './ui/input';
 
 export function NumberInput(props: {
   id: string;
@@ -44,7 +45,7 @@ export function NumberInput(props: {
     input.value = untrack(draft);
   }
   return (
-    <input
+    <Input
       ref={(node) => {
         input = node;
         props.inputRef?.(node);

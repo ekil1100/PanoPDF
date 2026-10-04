@@ -2,7 +2,7 @@
 
 **全景 PDF 阅读器 · 把 PDF 铺开读。**
 
-Electron + Solid + TypeScript + PDF.js 桌面应用，使用 Vite+ 构建、Effect 管理应用控制流程。页面横向连续展开，同屏页数随窗口、页面尺寸和缩放变化；也可切换纵向布局。需求见 [首版需求](docs/requirements.md)。
+Electron + Solid + TypeScript + PDF.js 桌面应用，使用 Vite+ 构建、Effect 管理应用控制流程，界面采用 shadcn-solid、Kobalte 与 Tailwind CSS。页面横向连续展开，同屏页数随窗口、页面尺寸和缩放变化；也可切换纵向布局。需求见 [首版需求](docs/requirements.md)。
 
 ## 开发与运行
 
@@ -32,6 +32,8 @@ bun run dist         # Build and package for the current platform
 
 - `src/main.tsx`：挂载入口、样式与热更新清理。
 - `src/app.tsx`、`src/components/`：Solid 界面、输入草稿、焦点、搜索和稳定阅读宿主。
+- `src/components/ui/`：本地维护的 shadcn-solid 源码组件；来源与 MIT 授权见 [授权说明](licenses/shadcn-solid.md)。
+- `src/ui.css`、`tailwind.config.ts`：界面主题、`ui-` 前缀工具类与 `--ui-*` 颜色变量；关闭 preflight，避免覆盖 PDF.js 页面、表单和文本层。
 - `src/app-controller.ts`：Effect 应用程序与 Solid 互操作入口，管理文件身份、启动、打开/关闭、位置保存、密码请求和实例 Scope。
 - `src/app-effects.ts`：类型化错误、Promise 适配、严格 FIFO 的有序 Fiber 和外部等待中断。
 - `src/reader.ts`、`src/reader-layout.ts`：原有 PDF.js 阅读器与布局/滚轮算法。
@@ -66,7 +68,8 @@ git push origin v0.1.0
 
 - 首次启动显示欢迎界面和打开引导；之后默认打开上次的 PDF 并恢复阅读位置。通过系统或命令行明确指定的文件优先。
 - 如果上次文件已移动或删除，会提示重新选择，不会偷偷打开其他旧文件。
-- 自定义标题栏显示“文件”菜单、当前文件名及最小化／最大化或还原／关闭窗口按钮；不再有重复的打开文件行。
+- macOS 标题栏采用 shadcn-solid 按钮绘制红黄绿控件，显示当前文件名，与阅读区背景同色；红色关闭、黄色最小化、绿色进入全屏，Option + 绿色切换最大化。全屏时通过系统“视图”菜单退出全屏。其他桌面平台保留系统标题栏。
+- 阅读工具栏悬浮在右上角，阅读进度悬浮在右下角，默认隐藏，悬停或键盘聚焦时显示。工具栏不包含“文件”按钮；打开和关闭文档使用系统菜单或快捷键。
 - 通过“文件 → 打开 PDF”、`⌘O` / `Ctrl+O`，或把一个本地 PDF 拖入窗口打开文档。欢迎页也提供打开按钮。
 - “文件 → 关闭文档”或 `⌘W` / `Ctrl+W` 返回空白界面，不关闭窗口，也不立即重开文档。
 - 拖入文件后，**核对系统确认框中的完整路径再允许读取**。确认默认选中取消。

@@ -45,8 +45,8 @@ const session = (options: Record<string, unknown> = {}) =>
   });
 
 describe('window actions', () => {
-  it('accepts only the three exact actions', () => {
-    for (const value of ['minimize', 'toggle-maximize', 'close'])
+  it('accepts only the allowed exact actions', () => {
+    for (const value of ['minimize', 'toggle-maximize', 'toggle-fullscreen', 'close'])
       expect(validateWindowAction(value)).toBe(value);
     for (const value of [
       null,
@@ -291,6 +291,10 @@ describe('main-process integration', () => {
       isFullScreen() {
         return this.fullscreen;
       }
+      setFullScreen(value: boolean) {
+        this.fullscreen = value;
+        this.emit(value ? 'enter-full-screen' : 'leave-full-screen');
+      }
       maximize() {
         this.maximized = true;
         this.emit('maximize');
@@ -371,14 +375,14 @@ describe('main-process integration', () => {
     return { app, windows, handlers, reads, call, tick, electron };
   }
 
-  it('creates a frameless isolated window, validates every new IPC and uses normal close', async () => {
+  it('creates an isolated window, validates every window IPC and uses normal close', async () => {
     const { windows, call, handlers, electron } = await main();
     const target = windows[0];
     expect(target.options).toMatchObject({
-      frame: false,
       autoHideMenuBar: true,
       webPreferences: { contextIsolation: true, sandbox: true, nodeIntegration: false },
     });
+    expect(target.options.frame).toBeUndefined();
     expect(target.setMenuBarVisibility).toHaveBeenCalledWith(false);
     for (const [channel, args] of [
       ['pano:startup', []],
@@ -401,6 +405,10 @@ describe('main-process integration', () => {
       fullscreen: false,
     });
     await call('pano:window-action', 'toggle-maximize');
+    await call('pano:window-action', 'toggle-fullscreen');
+    expect(await call('pano:window-state')).toEqual({ maximized: false, fullscreen: true });
+    await call('pano:window-action', 'toggle-fullscreen');
+    expect(await call('pano:window-state')).toEqual({ maximized: false, fullscreen: false });
     await call('pano:window-action', 'minimize');
     await call('pano:window-action', 'close');
     expect(target.minimize).toHaveBeenCalledTimes(1);
@@ -522,6 +530,8 @@ describe('sandboxed preload', () => {
     expect(invoke).not.toHaveBeenCalled();
     await bridge.windowAction('close');
     expect(invoke).toHaveBeenCalledWith('pano:window-action', 'close');
+    await bridge.windowAction('toggle-fullscreen');
+    expect(invoke).toHaveBeenCalledWith('pano:window-action', 'toggle-fullscreen');
     const callback = vi.fn();
     const off = bridge.onWindowState(callback);
     expect(invoke).toHaveBeenCalledWith('pano:listen', 'window-state', true);

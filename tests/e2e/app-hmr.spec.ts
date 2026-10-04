@@ -172,8 +172,13 @@ for (const [firstUpdate, followingUpdate] of [
               return `import { createReader as probeReader } from '/src/reader';
               window.__appHmr ??= (${createHmrProbe.toString()})(probeReader);
               window.__appHmr.enter();
-              import.meta.hot.on('vite:beforeUpdate', () => window.__appHmr.beginUpdate());
-              import.meta.hot.on('vite:afterUpdate', () => window.__appHmr.endUpdate());
+              // Tailwind also emits CSS updates; these do not remount the application.
+              import.meta.hot.on('vite:beforeUpdate', (payload) => {
+                if (payload.updates.some((update) => update.type === 'js-update' && !update.path.endsWith('.css'))) window.__appHmr.beginUpdate();
+              });
+              import.meta.hot.on('vite:afterUpdate', (payload) => {
+                if (payload.updates.some((update) => update.type === 'js-update' && !update.path.endsWith('.css'))) window.__appHmr.endUpdate();
+              });
               ${code.replaceAll('mountApplication(host)', 'mountApplication(host, window.__appHmr.options)')}`;
             }
             // Exercise the actual HMR graph without modifying any source file.
@@ -305,8 +310,7 @@ for (const [firstUpdate, followingUpdate] of [
       await page.locator('#pageNumber').fill('7');
       await page.locator('#pageNumber').press('Enter');
       await expect(page.locator('#pageNumber')).toHaveValue('7');
-      await page.locator('#fileMenuButton').click();
-      await page.locator('#closeFile').click();
+      await page.keyboard.press(process.platform === 'darwin' ? 'Meta+w' : 'Control+w');
       await expect(page.locator('#emptyState')).toBeVisible();
       await expect.poll(() => page.workers().length).toBe(0);
       expect(errors).toEqual([]);

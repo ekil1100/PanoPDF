@@ -254,7 +254,8 @@ function installIpc() {
     else if (action === 'toggle-maximize') {
       if (target.isMaximized()) target.unmaximize();
       else target.maximize();
-    } else target.close(); // Normal close preserves beforeunload and its position save.
+    } else if (action === 'toggle-fullscreen') target.setFullScreen(!target.isFullScreen());
+    else target.close(); // Normal close preserves beforeunload and its position save.
   });
   handle('pano:open', 0, () =>
     exclusiveOpen(async () => {
@@ -379,9 +380,9 @@ async function createWindow() {
     minWidth: 800,
     minHeight: 560,
     show: false,
-    frame: false,
+    ...(process.platform === 'darwin' ? { titleBarStyle: 'hidden' } : {}),
     autoHideMenuBar: true,
-    backgroundColor: '#f1f2f4',
+    backgroundColor: '#e7e9ed',
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -395,6 +396,7 @@ async function createWindow() {
     },
   });
   const created = window;
+  if (process.platform === 'darwin') created.setWindowButtonVisibility(false);
   const session = (startup = new StartupSession({
     paths: nativePaths,
     lastPath: settings.lastPath(),

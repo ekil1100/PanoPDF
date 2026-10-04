@@ -1,7 +1,11 @@
-import { For } from 'solid-js';
+import { createMemo } from 'solid-js';
 import type { AppState } from '../app-controller';
 import type { LayoutMode, ReaderController, ScrollInput } from '../contracts';
 import { Icon } from './icon';
+import { Button } from './ui/button';
+import { Label } from './ui/label';
+import { ReaderSelect, type ReaderChoice } from './reader-select';
+import { Separator } from './ui/separator';
 import { NumberInput } from './number-input';
 import type { Panel } from './sidebar';
 
@@ -23,7 +27,32 @@ export function ReaderToolbar(props: {
     ['height', 'pages-1', 'pages-2', 'pages-3', 'pages-4'].includes(zoomMode())
       ? zoomMode()
       : 'custom';
+  const zoomChoices = createMemo<ReaderChoice[]>(() => [
+    { value: 'custom', label: '自定义缩放' },
+    { value: 'height', label: '适应高度' },
+    ...[1, 2, 3, 4].map((count) => {
+      const choice = state()?.zoomChoices.find((item) => item.pages === count);
+      return {
+        value: `pages-${count}`,
+        label: choice
+          ? `${Math.round(choice.scale * 100)}% · 容纳 ${count} 页`
+          : `容纳 ${count} 页`,
+        disabled: !choice,
+      };
+    }),
+    { value: 'actual', label: '100% · 实际大小' },
+  ]);
+  const layouts: ReaderChoice[] = [
+    { value: 'horizontal', label: '横向连续' },
+    { value: 'vertical', label: '纵向滚动' },
+  ];
+  const scrollModes: ReaderChoice[] = [
+    { value: 'auto', label: '滚动：自动' },
+    { value: 'page', label: '滚动：按页' },
+    { value: 'smooth', label: '滚动：连续' },
+  ];
   let zoom!: HTMLInputElement;
+  let focusZoomOnClose = false;
   return (
     <div
       id="readerToolbar"
@@ -32,9 +61,11 @@ export function ReaderToolbar(props: {
       hidden={props.state.phase !== 'ready' && props.state.phase !== 'opening'}
     >
       <div class="control-group">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           id="outlineToggle"
-          class="icon-button"
+          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
           type="button"
           aria-label="文档目录"
           title="文档目录"
@@ -46,10 +77,12 @@ export function ReaderToolbar(props: {
           onClick={() => props.showPanel(props.panel === 'outline' ? null : 'outline', true)}
         >
           <Icon name="outline" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
           id="searchToggle"
-          class="icon-button"
+          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
           type="button"
           aria-label="搜索文档"
           title={`搜索文档（${props.isMac ? '⌘' : 'Ctrl'} F）`}
@@ -61,13 +94,20 @@ export function ReaderToolbar(props: {
           onClick={() => props.showPanel(props.panel === 'search' ? null : 'search', true)}
         >
           <Icon name="search" />
-        </button>
+        </Button>
       </div>
-      <span class="divider" aria-hidden="true" />
+      <Separator
+        as="span"
+        orientation="vertical"
+        class="divider data-[orientation=vertical]:ui-h-5"
+        aria-hidden="true"
+      />
       <div class="control-group page-controls">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           id="previousPage"
-          class="icon-button"
+          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
           type="button"
           aria-label="上一页"
           title="上一页"
@@ -77,13 +117,13 @@ export function ReaderToolbar(props: {
           onClick={() => props.reader().goToPage(state()!.page - 1)}
         >
           <Icon name="previous" />
-        </button>
-        <label class="sr-only" for="pageNumber">
+        </Button>
+        <Label class="sr-only" for="pageNumber">
           页码
-        </label>
+        </Label>
         <NumberInput
           id="pageNumber"
-          class="number-input page-input"
+          class="number-input page-input ui-w-12 ui-px-1"
           inputmode="numeric"
           disabled={!ready()}
           value={ready() ? String(state()!.page) : '—'}
@@ -102,9 +142,11 @@ export function ReaderToolbar(props: {
         >
           {ready() ? `/ ${state()!.pages}` : '/ —'}
         </span>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           id="nextPage"
-          class="icon-button"
+          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
           type="button"
           aria-label="下一页"
           title="下一页"
@@ -114,13 +156,20 @@ export function ReaderToolbar(props: {
           onClick={() => props.reader().goToPage(state()!.page + 1)}
         >
           <Icon name="next" />
-        </button>
+        </Button>
       </div>
-      <span class="divider" aria-hidden="true" />
+      <Separator
+        as="span"
+        orientation="vertical"
+        class="divider data-[orientation=vertical]:ui-h-5"
+        aria-hidden="true"
+      />
       <div class="control-group zoom-controls">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           id="zoomOut"
-          class="icon-button"
+          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
           type="button"
           aria-label="缩小"
           title="缩小"
@@ -130,13 +179,13 @@ export function ReaderToolbar(props: {
           onClick={() => props.reader().zoomBy(1 / 1.1)}
         >
           <Icon name="minus" />
-        </button>
-        <label class="sr-only" for="zoomPercent">
+        </Button>
+        <Label class="sr-only" for="zoomPercent">
           缩放百分比
-        </label>
+        </Label>
         <NumberInput
           id="zoomPercent"
-          class="number-input zoom-input"
+          class="number-input zoom-input ui-w-16 ui-px-1"
           inputmode="decimal"
           disabled={!ready()}
           inputRef={(node) => {
@@ -149,9 +198,11 @@ export function ReaderToolbar(props: {
           status={props.status}
           focusReader={props.focusReader}
         />
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           id="zoomIn"
-          class="icon-button"
+          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
           type="button"
           aria-label="放大"
           title="放大"
@@ -161,66 +212,56 @@ export function ReaderToolbar(props: {
           onClick={() => props.reader().zoomBy(1.1)}
         >
           <Icon name="plus" />
-        </button>
-        <label class="sr-only" for="zoomMode">
-          缩放方式
-        </label>
-        <select
+        </Button>
+        <ReaderSelect
           id="zoomMode"
-          class="zoom-select"
-          data-reader
+          label="缩放方式"
+          class="zoom-select ui-w-[156px]"
           disabled={!ready()}
           value={selectedZoom()}
-          onChange={(event) => {
-            const value = event.currentTarget.value;
+          options={zoomChoices()}
+          onChange={(value) => {
             if (value === 'height') props.reader().fitHeight();
             else if (value === 'actual') props.reader().setScale(1);
             else if (value.startsWith('pages-'))
               props.reader().fitPageCount(Number(value.slice(6)));
-            else {
-              zoom.focus();
-              zoom.select();
-            }
-            event.currentTarget.value = selectedZoom();
+            else focusZoomOnClose = true;
           }}
-        >
-          <option value="custom">自定义缩放</option>
-          <option value="height">适应高度</option>
-          <For each={[1, 2, 3, 4]}>
-            {(count) => {
-              const choice = () => state()?.zoomChoices.find((item) => item.pages === count);
-              return (
-                <option value={`pages-${count}`} disabled={!choice()}>
-                  {choice()
-                    ? `${Math.round(choice()!.scale * 100)}% · 容纳 ${count} 页`
-                    : `容纳 ${count} 页`}
-                </option>
-              );
-            }}
-          </For>
-          <option value="actual">100% · 实际大小</option>
-        </select>
+          onCloseAutoFocus={(event) => {
+            if (!focusZoomOnClose) return;
+            event.preventDefault();
+            focusZoomOnClose = false;
+            zoom.focus();
+            zoom.select();
+          }}
+        />
       </div>
-      <span class="divider" aria-hidden="true" />
+      <Separator
+        as="span"
+        orientation="vertical"
+        class="divider data-[orientation=vertical]:ui-h-5"
+        aria-hidden="true"
+      />
       <div class="control-group layout-controls">
-        <label class="sr-only" for="layoutMode">
-          页面布局
-        </label>
-        <select
+        <ReaderSelect
           id="layoutMode"
-          data-reader
+          label="页面布局"
+          class="ui-w-28"
           disabled={!ready()}
           value={state()?.layout ?? 'horizontal'}
-          onChange={(event) => props.reader().setLayout(event.currentTarget.value as LayoutMode)}
+          options={layouts}
+          onChange={(value) => props.reader().setLayout(value as LayoutMode)}
+        />
+        <Label
+          id="columnsControl"
+          class="inline-label"
+          for="columns"
+          hidden={state()?.layout !== 'vertical'}
         >
-          <option value="horizontal">横向连续</option>
-          <option value="vertical">纵向滚动</option>
-        </select>
-        <label id="columnsControl" class="inline-label" hidden={state()?.layout !== 'vertical'}>
           每行{' '}
           <NumberInput
             id="columns"
-            class="number-input columns-input"
+            class="number-input columns-input ui-w-12 ui-px-1"
             type="number"
             min={1}
             max={32}
@@ -234,25 +275,18 @@ export function ReaderToolbar(props: {
             focusReader={props.focusReader}
           />{' '}
           页
-        </label>
-        <label class="sr-only" for="scrollInput">
-          横向滚动方式
-        </label>
-        <select
+        </Label>
+        <ReaderSelect
           id="scrollInput"
+          label="横向滚动方式"
+          class="ui-w-32"
           title="横向滚动方式：自动判断鼠标或触控板，也可手动选择"
-          data-reader
           disabled={!ready()}
           hidden={!!state() && state()!.layout !== 'horizontal'}
           value={state()?.scrollInput ?? 'auto'}
-          onChange={(event) =>
-            props.reader().setScrollInput(event.currentTarget.value as ScrollInput)
-          }
-        >
-          <option value="auto">滚动：自动</option>
-          <option value="page">滚动：按页</option>
-          <option value="smooth">滚动：连续</option>
-        </select>
+          options={scrollModes}
+          onChange={(value) => props.reader().setScrollInput(value as ScrollInput)}
+        />
       </div>
     </div>
   );

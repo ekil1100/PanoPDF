@@ -15,72 +15,9 @@ body {
   color: var(--text);
   font: 13px/1.5 var(--font-ui);
 }
-button:not(:where(#viewer *)),
-input:not(:where(#viewer *)),
-select:not(:where(#viewer *)) {
-  font: inherit;
-  color: inherit;
-}
-button:not(:where(#viewer *)),
-select:not(:where(#viewer *)),
-input:not(:where(#viewer *)) {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: var(--surface);
-}
-button:not(:where(#viewer *)),
-select:not(:where(#viewer *)) {
-  min-height: 32px;
-}
-button:not(:where(#viewer *)) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: 4px 12px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-button:not(:where(#viewer *)):hover:not(:disabled),
-select:not(:where(#viewer *)):hover:not(:disabled) {
-  background: var(--hover);
-}
-button:not(:where(#viewer *)):active:not(:disabled) {
-  background: var(--pressed);
-}
-button:not(:where(#viewer *)):disabled,
-input:not(:where(#viewer *)):disabled,
-select:not(:where(#viewer *)):disabled {
-  color: var(--text-disabled);
-  cursor: default;
-  background: var(--surface-subtle);
-}
-button:not(:where(#viewer *)):disabled .icon {
-  opacity: 0.65;
-}
-input:not(:where(#viewer *)) {
-  min-width: 0;
-  height: 32px;
-  padding: 4px 8px;
-  caret-color: var(--accent);
-}
-input:not(:where(#viewer *))::placeholder {
-  color: var(--text-muted);
-  opacity: 1;
-}
-select:not(:where(#viewer *)) {
-  padding: 4px 24px 4px 8px;
-}
 :focus-visible:not(:where(#viewer *)) {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
-}
-input:not(:where(#viewer *)):focus-visible,
-select:not(:where(#viewer *)):focus-visible {
-  outline-offset: 0;
-}
-input:not(:where(#viewer *))[aria-invalid='true'] {
-  border-color: var(--error);
 }
 :not(:where(#viewer *))::selection {
   background: var(--selection);
@@ -117,21 +54,6 @@ h2:not(:where(#viewer *)) {
   border-color: transparent;
   background: transparent;
 }
-.text-button {
-  border-color: transparent;
-}
-.primary-button {
-  color: var(--on-accent);
-  border-color: var(--accent);
-  background: var(--accent);
-}
-.primary-button:hover:not(:disabled) {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
-.primary-button:active:not(:disabled) {
-  background: var(--accent-pressed);
-}
 .muted {
   color: var(--text-muted);
 }
@@ -149,106 +71,88 @@ h2:not(:where(#viewer *)) {
 #app {
   display: flex;
   flex-direction: column;
+  position: relative;
   width: 100%;
   height: 100%;
   min-width: 640px;
 }
-.app-header {
-  flex: 0 0 auto;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-.titlebar {
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr) 140px;
+.mac-titlebar {
+  flex: 0 0 32px;
+  display: flex;
   align-items: center;
-  height: 40px;
-  background: var(--surface-subtle);
-  border-bottom: 1px solid var(--border-subtle);
+  min-width: 0;
+  gap: 12px;
+  padding: 0 12px;
+  background: #e7e9ed;
   user-select: none;
   -webkit-app-region: drag;
 }
-.titlebar-menu {
-  padding-inline: 8px;
-}
-.titlebar button,
-.file-menu {
-  -webkit-app-region: no-drag;
-}
-.titlebar-menu-button {
-  min-height: 28px;
-  padding: 2px 12px;
-  border-color: transparent;
-  background: transparent;
-}
-.filename {
-  min-width: 0;
-  padding-inline: 12px;
-  font-weight: 550;
-  text-align: center;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 .window-controls {
   display: flex;
-  justify-content: flex-end;
-  align-self: stretch;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  -webkit-app-region: no-drag;
 }
-.window-controls button {
-  width: 46px;
-  height: 40px;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-  background: transparent;
+.window-controls .traffic-light {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px !important;
+  min-height: 12px !important;
+  padding: 0 !important;
+  border: 1px solid rgb(0 0 0 / 12%) !important;
+  border-radius: 50% !important;
+  flex: 0 0 12px;
 }
-.window-controls .icon {
-  width: 14px;
-  height: 14px;
+.traffic-light .icon {
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  color: rgb(0 0 0 / 65%);
 }
-.window-controls button:focus-visible {
-  outline-offset: -4px;
+.window-controls:hover .icon,
+.window-controls:focus-within .icon {
+  opacity: 1;
 }
-.window-controls #closeWindow:hover {
-  background: var(--error);
-  color: var(--on-accent);
+.mac-titlebar-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
 }
-.file-menu {
-  position: fixed;
-  inset: 36px auto auto 8px;
-  margin: 0;
-  padding: 4px;
-  width: 244px;
+.app-header {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-start;
+  max-width: calc(100% - 16px);
+  padding: 8px;
+  background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
-  color: var(--text);
-  background: var(--surface);
 }
-.file-menu:popover-open {
-  display: flex;
-  flex-direction: column;
+.floating-chrome {
+  opacity: 0;
+  transition: opacity 120ms ease;
 }
-.file-menu button {
-  width: 100%;
-  justify-content: flex-start;
-  border: 0;
-  padding: 8px;
-  text-align: left;
+.floating-chrome:hover,
+.floating-chrome:focus-within,
+.app-header:has([aria-haspopup][aria-expanded='true']) {
+  opacity: 1;
 }
-.file-menu kbd {
-  margin-left: auto;
-  color: var(--text-muted);
-}
-.file-menu button:focus-visible {
-  outline-offset: -2px;
+.app-header {
+  -webkit-app-region: no-drag;
 }
 .reader-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  padding: 8px 12px;
+  justify-content: flex-end;
+  min-width: 0;
+  padding: 0;
 }
 .control-group {
   display: flex;
@@ -293,8 +197,7 @@ h2:not(:where(#viewer *)) {
 .columns-input {
   width: 48px;
 }
-button:not(:where(#viewer *))[aria-expanded='true'],
-.panel-tabs button:not(:where(#viewer *))[aria-selected='true'] {
+button:not(:where(#viewer *))[aria-expanded='true'] {
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -401,13 +304,7 @@ button:not(:where(#viewer *))[aria-expanded='true'],
   min-width: 0;
   min-height: 0;
   position: relative;
-  background: var(--canvas);
-}
-#viewerContainer {
-  position: absolute;
-  inset: 0;
-  overflow: auto;
-  outline-offset: -3px;
+  background: #e7e9ed;
 }
 .empty-state {
   position: absolute;
@@ -529,28 +426,10 @@ kbd {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-progress {
-  width: 180px;
-  height: 4px;
-  accent-color: var(--accent);
-  margin-block: 4px;
-}
 .state-actions {
   display: flex;
   gap: 8px;
   margin-top: 8px;
-}
-.notice {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 12px;
-  background: var(--error-surface);
-  color: var(--error);
-  border-bottom: 1px solid var(--border);
-}
-#noticeText {
-  flex: 1;
 }
 .drop-overlay {
   position: absolute;
@@ -565,40 +444,22 @@ progress {
   font-size: 16px;
 }
 .statusbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 0 0 auto;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
   min-height: 28px;
-  padding: 4px 12px;
+  padding: 8px 16px;
   background: var(--surface-subtle);
-  border-top: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
   color: var(--text-muted);
   font-size: 12px;
 }
-#statusMessage {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#documentStatus,
-#storageStatus {
+#documentStatus {
   flex: 0 0 auto;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-}
-dialog {
-  width: min(400px, calc(100vw - 48px));
-  padding: 24px;
-  color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-dialog::backdrop {
-  background: var(--backdrop);
 }
 #passwordDescription {
   color: var(--text-muted);
@@ -606,10 +467,6 @@ dialog::backdrop {
 }
 #passwordInput {
   width: 100%;
-}
-.password-error {
-  margin-top: 8px;
-  color: var(--error);
 }
 .dialog-actions {
   display: flex;
@@ -647,9 +504,6 @@ dialog::backdrop {
   }
   .recent-section {
     margin-top: 24px;
-  }
-  #storageStatus {
-    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

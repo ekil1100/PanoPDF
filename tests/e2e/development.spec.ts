@@ -13,7 +13,7 @@ test('development uses local assets and Solid HMR preserves the live reader', as
   const file = path.join(await realpath(directory), 'development.pdf');
   await writeFile(file, await readerFixture());
   let updated = false;
-  const titleBar = path.join(root, 'src/components/title-bar.tsx');
+  const toolbar = path.join(root, 'src/components/reader-toolbar.tsx');
   const server = await createServer({
     root,
     server: { host: '127.0.0.1', port: 0 },
@@ -26,8 +26,8 @@ test('development uses local assets and Solid HMR preserves the live reader', as
             return `window.__developmentWarnings = []; const originalWarn = console.warn; console.warn = (...args) => { window.__developmentWarnings.push(args.map(String).join(' ') + '\\n' + new Error().stack); originalWarn(...args); };\n${code}`;
           }
           // Change only the served module. The test never rewrites repository source.
-          if (updated && id.split('?')[0] === titleBar) {
-            return code.replace(/>\s*文件\s*<\/button>/, '>文件 HMR</button>');
+          if (updated && id.split('?')[0] === toolbar) {
+            return code.replaceAll('outlineToggle', 'outlineToggleHmr');
           }
         },
       },
@@ -93,10 +93,10 @@ test('development uses local assets and Solid HMR preserves the live reader', as
     await page.locator('#pageNumber').fill('5');
     await page.locator('#pageNumber').press('Enter');
     updated = true;
-    const modules = server.moduleGraph.getModulesByFile(titleBar);
+    const modules = server.moduleGraph.getModulesByFile(toolbar);
     expect(modules?.size).toBeGreaterThan(0);
     for (const module of modules!) await server.reloadModule(module);
-    await expect(page.locator('#fileMenuButton')).toHaveText('文件 HMR');
+    await expect(page.locator('#outlineToggleHmr')).toBeVisible();
     await expect(page.locator('#pageNumber')).toHaveValue('5');
     expect(
       await identity.evaluate(
@@ -106,8 +106,7 @@ test('development uses local assets and Solid HMR preserves the live reader', as
       ),
     ).toBe(true);
     expect(page.workers().length).toBe(1);
-    await page.locator('#fileMenuButton').click();
-    await page.locator('#closeFile').click();
+    await page.keyboard.press(process.platform === 'darwin' ? 'Meta+w' : 'Control+w');
     await expect(page.locator('#emptyState')).toBeVisible();
     await expect.poll(() => page.workers().length).toBe(0);
     expect(errors).toEqual([]);

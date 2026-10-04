@@ -1,0 +1,57 @@
+/* No Tailwind base layer: preflight and universal variable resets stay out of PDF.js. */
+:root {
+  --ui-background: 0 0% 100%;
+  --ui-foreground: 220 14% 16%;
+  --ui-border: 216 10% 81%;
+  --ui-input: 216 10% 81%;
+  --ui-ring: 213 68% 45%;
+  --ui-primary: 213 75% 40%;
+  --ui-primary-foreground: 0 0% 100%;
+  --ui-secondary: 220 12% 97%;
+  --ui-secondary-foreground: 220 14% 16%;
+  --ui-destructive: 0 60% 40%;
+  --ui-destructive-foreground: 0 0% 100%;
+  --ui-muted: 220 12% 97%;
+  --ui-muted-foreground: 217 9% 39%;
+  --ui-accent: 220 12% 94%;
+  --ui-accent-foreground: 220 14% 16%;
+  --ui-popover: 0 0% 100%;
+  --ui-popover-foreground: 220 14% 16%;
+  --ui-radius: 4px;
+  --ui-font:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* Only source-owned styled elements receive the defaults utilities rely on. */
+.ui-base {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  border: 0 solid hsl(var(--ui-border));
+  padding: 0;
+  font-family: var(--ui-font);
+  font-size: 13px;
+  line-height: 20px;
+  --tw-translate-x: 0;
+  --tw-translate-y: 0;
+  --tw-rotate: 0;
+  --tw-skew-x: 0;
+  --tw-skew-y: 0;
+  --tw-scale-x: 1;
+  --tw-scale-y: 1;
+  --tw-ring-inset: ;
+  --tw-ring-offset-width: 0px;
+  --tw-ring-offset-color: #fff;
+  --tw-ring-color: hsl(var(--ui-ring));
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+}
+
+@tailwind utilities;
+
+.ui-base[hidden] {
+  display: none !important;
+}

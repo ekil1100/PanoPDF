@@ -1,4 +1,5 @@
 import './style.css';
+import './ui.css';
 import { mountApplication } from './app';
 
 const host = document.getElementById('app');

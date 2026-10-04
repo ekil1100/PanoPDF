@@ -308,8 +308,7 @@ test('ordinary close keeps the live reader measurable while final save is blocke
   const host = page.locator('#viewerContainer');
   expect(errors).toEqual([]);
 
-  await page.locator('#fileMenuButton').click();
-  await page.locator('#closeFile').click();
+  await page.keyboard.press('Control+w');
   await expect(page.locator('#readingArea')).toHaveAttribute('aria-busy', 'true');
   await expect(page.locator('#pageNumber')).toBeDisabled();
   await expect.poll(async () => (await snapshot(index)).saved.length).toBeGreaterThan(0);
@@ -374,7 +373,9 @@ for (const outcome of ['resolve', 'reject'] as const) {
     const current = await fixture!.evaluate((value) => value.mount());
     await expect(page.locator('#emptyOpen')).toBeEnabled();
     await expect(page.locator('#maximizeWindow')).toBeEnabled();
-    await expect(page.locator('#maximizeWindow')).toHaveAttribute('aria-label', '最大化窗口');
+    await expect(page.locator('#maximizeWindow')).toHaveAttribute('aria-label', '进入全屏');
+    // This fixture uses a Linux bridge, which keeps the system titlebar.
+    await expect(page.locator('#titlebar')).toBeHidden();
     const late = await fixture!.evaluate(
       (value, { old, bytes, outcome }) => value.instance(old).completeLate(bytes, outcome),
       { old, bytes: pdf, outcome },

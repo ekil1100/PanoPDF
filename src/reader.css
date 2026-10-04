@@ -13,9 +13,10 @@
   touch-action: pan-x pan-y;
 }
 
+/* Focus stays on the scrollport for keyboard navigation. Individual controls
+   and PDF links retain their visible focus rings without outlining the window. */
 #viewerContainer:focus-visible {
-  outline: 2px solid #165dca;
-  outline-offset: -2px;
+  outline: none;
 }
 
 #viewerContainer #viewer {
