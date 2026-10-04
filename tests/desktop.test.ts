@@ -493,6 +493,29 @@ describe('sandboxed preload', () => {
     ]);
   });
 
+  it('dispatches a listener snapshot when subscriptions change during an event', () => {
+    const { bridge, listeners } = preload();
+    const added = vi.fn();
+    const removed = vi.fn();
+    const first = vi.fn().mockImplementationOnce(() => {
+      unsubscribe();
+      bridge.onCommand(added);
+    });
+    bridge.onCommand(first);
+    const unsubscribe = bridge.onCommand(removed);
+    const dispatch = listeners.get('pano:command')!;
+
+    dispatch({}, 'open');
+    expect(first).toHaveBeenCalledExactlyOnceWith('open');
+    expect(removed).toHaveBeenCalledExactlyOnceWith('open');
+    expect(added).not.toHaveBeenCalled();
+
+    dispatch({}, 'close-document');
+    expect(first).toHaveBeenCalledTimes(2);
+    expect(removed).toHaveBeenCalledTimes(1);
+    expect(added).toHaveBeenCalledExactlyOnceWith('close-document');
+  });
+
   it('validates actions and supports validated state events with idempotent unsubscription', async () => {
     const { bridge, invoke, listeners } = preload();
     await expect(bridge.windowAction('destroy')).rejects.toThrow();

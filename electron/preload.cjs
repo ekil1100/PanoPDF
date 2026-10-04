@@ -64,7 +64,9 @@ for (const kind of ['file', 'command', 'window-state']) {
   ipcRenderer.on(`pano:${kind}`, (_event, value) => {
     if (kind === 'command' && !commands.has(value)) return;
     if (kind === 'window-state' && (!value || typeof value.maximized !== 'boolean' || typeof value.fullscreen !== 'boolean')) return;
-    for (const callback of [...callbacks[kind]]) {
+    // Snapshot listeners so subscription changes apply to the next event.
+    const snapshot = [...callbacks[kind]];
+    for (const callback of snapshot) {
       try { callback(value); } catch (error) { console.error('Desktop event callback failed:', error?.name || 'Error'); }
     }
   });

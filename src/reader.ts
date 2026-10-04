@@ -556,16 +556,16 @@ export function createReader(
       ++generation;
       detach();
       resetCallbacks();
-      await Promise.all([...releases]);
+      await Promise.all(releases);
     },
     async destroy() {
-      if (destroyed) { await Promise.all([...releases]); return; }
+      if (destroyed) { await Promise.all(releases); return; }
       ++generation;
       destroyed = true;
       lifetime.abort();
       resize.disconnect();
       detach();
-      await Promise.all([...releases]);
+      await Promise.all(releases);
     },
     setLayout(mode) {
       if (destroyed || !['horizontal', 'vertical'].includes(mode)) return;
