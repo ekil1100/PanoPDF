@@ -32,13 +32,13 @@
   white-space: normal;
 }
 
-#viewerContainer[data-layout="horizontal"] #viewer {
+#viewerContainer[data-layout='horizontal'] #viewer {
   display: flex;
   flex-flow: row nowrap;
   align-items: flex-start;
 }
 
-#viewerContainer[data-layout="vertical"] #viewer {
+#viewerContainer[data-layout='vertical'] #viewer {
   display: grid;
   grid-template-columns: repeat(var(--reader-columns, 1), max-content);
   align-items: start;
@@ -54,8 +54,11 @@
 }
 
 /* Center each short page against the viewport, not the tallest sibling. */
-#viewerContainer[data-layout="horizontal"] #viewer .page {
-  margin-top: max(0px, calc((var(--reader-viewport-height, 0px) - 32px - var(--reader-page-height, 0px)) / 2));
+#viewerContainer[data-layout='horizontal'] #viewer .page {
+  margin-top: max(
+    0px,
+    calc((var(--reader-viewport-height, 0px) - 32px - var(--reader-page-height, 0px)) / 2)
+  );
 }
 
 #viewerContainer #viewer .textLayer {

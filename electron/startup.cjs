@@ -36,8 +36,11 @@ class StartupSession {
     while (filePath && !this.disposed) {
       let file;
       let error;
-      try { file = await this.open(filePath); }
-      catch (failure) { error = friendlyError(failure); }
+      try {
+        file = await this.open(filePath);
+      } catch (failure) {
+        error = friendlyError(failure);
+      }
       if (this.disposed) return this.empty();
       // An explicit OS open arriving during restoration wins, even if restoration failed.
       if (restoring && this.paths.length) {

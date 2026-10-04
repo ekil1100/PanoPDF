@@ -109,8 +109,6 @@ function pdfResources(): Plugin {
 }
 
 export default defineConfig({
-  // Keep legacy formatting intact; format touched files with `vp fmt <paths>`.
-  check: { fmt: false },
   fmt: { singleQuote: true },
   test: {
     environment: 'node',

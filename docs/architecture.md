@@ -101,7 +101,7 @@ Solid 管理外壳和宿主显隐；PDF.js 独占 viewer 后代、宿主滚动�
 - 配置集中在 `vite.config.ts`；原 `vitest.config.ts` 已删除。
 - Bun 的 `vite` 依赖和 override 指向 Vite+ core，满足 peer 解析。配置使用 `vite-plus`，测试使用 `vite-plus/test`；`scripts/dev.mjs` 的程序化 Vite API 继续从 `vite` 导入。
 - 开发脚本先解析 Electron，再启动本地服务器，将实际端口传给 Electron。退出时在同一信号任务内启动 Electron 和 Vite 的清理，随后等待两者，防止 Vite 的独立 SIGTERM 处理提前退出父进程。
-- 检查保留历史排版，针对修改文件运行格式化；全库 lint 和类型检查由 `bun run check` 执行。
+- `bun run check` 统一执行全库格式检查、类型感知 lint 和类型检查；`bunx vp fmt` 统一代码与文档排版。
 - 本地 PDF 资源插件、CSP、ES2022、相对 base 和 electron-builder 分发保持原职责。开发热更新回归分别覆盖标题栏替换后的 reader 稳定性，以及应用模块或阅读宿主替换时的资源释放、阻塞保存和新界面可用性。
 
 ## 测试入口

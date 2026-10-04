@@ -1,5 +1,16 @@
 # 验证记录
 
+## 启用全库格式检查
+
+移除 `vite.config.ts` 中的 `check.fmt: false`，保留单引号排版配置，并执行一次 `vp fmt` 统一全库排版。`bun run check` 现覆盖格式、类型感知 lint 与类型检查。下文的跳过格式检查与 4 条集合展开建议属于历史验证结果；集合展开建议已在 `45dbc2a` 修复。
+
+- `vp check`：56 个文件格式通过；37 个文件的 lint 与类型检查通过，0 警告、0 错误。
+- `bun run test`：6 个测试文件、113 项用例全部通过。
+- `bun run build`：TypeScript 检查与生产构建通过，保留大于 500 kB 的包体积提示。
+- `git diff --check`：通过。
+
+本轮修改配置、说明与排版，未重跑 Electron E2E 或安装包验证。
+
 ## 关闭期间宿主尺寸修复
 
 普通关闭会先发布 `closing`，等待最终保存后才调用 `reader.close()`。原来的 `hidden=true` 让仍存活的 reader 宿主变为零尺寸；原生 ResizeObserver 随后调度动画帧，PDF.js 刷新触发 `offsetParent is not set -- cannot scroll` 并将实时比例降至 0.1。受控诊断和旧入口/PDF.js 6.3 对照见 `.agents/verification/review-fix/queued-refresh-diagnosis.md`。这是继承的宿主显隐缺陷；原始历史事件缺少帧状态，无法逐帧还原该次事件。

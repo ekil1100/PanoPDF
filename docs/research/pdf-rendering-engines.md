@@ -31,7 +31,7 @@
 关键源码原文：
 
 ```js
-const worker = new Worker(workerSrc, { type: "module" });
+const worker = new Worker(workerSrc, { type: 'module' });
 ```
 
 ```js
@@ -76,12 +76,12 @@ API 原文：
 
 发布版源码可确认：[S06]
 
-| 用途 | 当前实现 | 性能含义与边界 |
-| --- | --- | --- |
-| JPEG 2000／JPX 解码 | `openjpeg.wasm` | 不再是“所有图像都由手写 JS 解码”；不加速与 JPX 无关的矢量路径 |
-| JBIG2、CCITT 传真编码解码 | `jbig2.wasm`，PDFium 解码器的 WASM 路径 | 对黑白扫描件很重要；不是把整个 PDFium 引擎嵌入 PDF.js |
-| ICC 色彩转换 | QCMS，`qcms_bg.wasm` | 处理色彩转换，不等于整页栅格器 |
-| PDF PostScript 函数 | `buildPostScriptWasmFunction` | 对相应函数尝试编译为 WASM；失败仍有 JS 解释路径，不是所有 PDF 操作都编译成 WASM |
+| 用途                      | 当前实现                                | 性能含义与边界                                                                  |
+| ------------------------- | --------------------------------------- | ------------------------------------------------------------------------------- |
+| JPEG 2000／JPX 解码       | `openjpeg.wasm`                         | 不再是“所有图像都由手写 JS 解码”；不加速与 JPX 无关的矢量路径                   |
+| JBIG2、CCITT 传真编码解码 | `jbig2.wasm`，PDFium 解码器的 WASM 路径 | 对黑白扫描件很重要；不是把整个 PDFium 引擎嵌入 PDF.js                           |
+| ICC 色彩转换              | QCMS，`qcms_bg.wasm`                    | 处理色彩转换，不等于整页栅格器                                                  |
+| PDF PostScript 函数       | `buildPostScriptWasmFunction`           | 对相应函数尝试编译为 WASM；失败仍有 JS 解释路径，不是所有 PDF 操作都编译成 WASM |
 
 2026 年合入的 JBIG2 PR 原文：
 
@@ -99,7 +99,7 @@ PanoPDF 应打包并正确配置同版本 worker、`wasmUrl`、所需 CMap／标
 
 2022 年 #14652 附带楼层图 `Floor2.pdf`，报告者在 Chrome 99／macOS 下描述缩放出现白屏、等待 5–10 秒，并称 Preview 和 Chrome 内置阅读器更快。维护者诊断原文：
 
-> “That PDF document contains a *huge* amount of path rendering operators, which likely explains why this is a bit slow since that's something that's not entirely easy to optimize …” [S08]
+> “That PDF document contains a _huge_ amount of path rendering operators, which likely explains why this is a bit slow since that's something that's not entirely easy to optimize …” [S08]
 
 可采信的是：**有可复现材料，维护者确认大量路径是合理瓶颈方向。**不能采信为：当前版本普遍慢 5–10 秒，或任何原生引擎都更快。该问题现已关闭；后续用户还有不同耗时报告，不构成相同环境下的版本对比。
 
@@ -172,9 +172,9 @@ const EXECUTION_STEPS = 10;
 
 #17485 中用户认为分片有约三倍开销，建议大幅增大时间片。维护者明确反对，指出这会破坏可见页优先和取消能力：
 
-> “It would effectively break the ability to render the most visible page (in the viewer) *first* …”
+> “It would effectively break the ability to render the most visible page (in the viewer) _first_ …”
 >
-> “Note that *cancelling* of rendering can only happen when rendering pauses …” [S14]
+> “Note that _cancelling_ of rendering can only happen when rendering pauses …” [S14]
 
 因此对 PanoPDF，不能为了让某页的计时数字更小，就把一次绘制变成秒级不让步的任务。
 
@@ -196,7 +196,7 @@ const EXECUTION_STEPS = 10;
 
 离开缓存的页面应取消任务、释放 canvas／页面资源。`PDFPageProxy.cleanup()` 会在仍有渲染等工作时返回未成功清理；文档切换则结束整个 loading task／文档。[S02] 不能每次滚动都销毁文档，也不能假设清理后系统任务管理器数字立即下降。维护者在 #16647 说明：
 
-> “the decision on how/when said data is actually being evicted from memory is ultimately up to the browser *and* operating system.” [S16]
+> “the decision on how/when said data is actually being evicted from memory is ultimately up to the browser _and_ operating system.” [S16]
 
 ### 3.3 高倍率缩放已不只有“模糊地放大整张 canvas”
 
@@ -240,14 +240,14 @@ const EXECUTION_STEPS = 10;
 
 以下是根据上面源码能力提出的应用设计建议，不是 PDF.js 官方对 PanoPDF 的性能保证。
 
-| 核心 UX | 能否支持／实现重点 |
-| --- | --- |
-| 横向连续页面 | 能。已有 `ScrollMode.HORIZONTAL`、横向可见区域计算；不需要换引擎才能实现。[S11] |
-| 同时可见页数可变 | 能。用页面与视口交集形成可见集合，不假设固定单页／双页。沿用可见页优先，邻页少量预渲染，并额外限制总像素／字节预算。 |
-| 任意缩放比例 | 能支持连续尺度，但不等于无限清晰、无限画布或零等待。CSS 预览与最终栅格分离，高倍率走局部高清。 |
-| 滚轮逐页吸附 | 属于输入／滚动控制层。依据当前几何位置选目标页，滚动动画不等待高清完成，不把普通滚轮事件全部当作缩放。 |
-| 触控板平滑滚动 | 尽量保留连续滚动与惯性，不强制每个小 delta 都吸附到一页。浏览器 wheel 事件没有可依赖的通用“来自鼠标／触控板”身份，应使用保守策略并提供模式选择。渲染调度必须独立于滚动动画。 |
-| 页面垂直居中 | 属于布局，不需要引擎改动。官方横向 CSS 已有 `vertical-align: middle`，但那是同行页面对齐；PanoPDF 仍需明确相对视口居中的规则，以及页面高于视口时的平移／溢出行为。[S21] |
+| 核心 UX          | 能否支持／实现重点                                                                                                                                                           |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 横向连续页面     | 能。已有 `ScrollMode.HORIZONTAL`、横向可见区域计算；不需要换引擎才能实现。[S11]                                                                                              |
+| 同时可见页数可变 | 能。用页面与视口交集形成可见集合，不假设固定单页／双页。沿用可见页优先，邻页少量预渲染，并额外限制总像素／字节预算。                                                         |
+| 任意缩放比例     | 能支持连续尺度，但不等于无限清晰、无限画布或零等待。CSS 预览与最终栅格分离，高倍率走局部高清。                                                                               |
+| 滚轮逐页吸附     | 属于输入／滚动控制层。依据当前几何位置选目标页，滚动动画不等待高清完成，不把普通滚轮事件全部当作缩放。                                                                       |
+| 触控板平滑滚动   | 尽量保留连续滚动与惯性，不强制每个小 delta 都吸附到一页。浏览器 wheel 事件没有可依赖的通用“来自鼠标／触控板”身份，应使用保守策略并提供模式选择。渲染调度必须独立于滚动动画。 |
+| 页面垂直居中     | 属于布局，不需要引擎改动。官方横向 CSS 已有 `vertical-align: middle`，但那是同行页面对齐；PanoPDF 仍需明确相对视口居中的规则，以及页面高于视口时的平移／溢出行为。[S21]      |
 
 最小实现建议：**一个文档对应一套正常 worker／文档状态，优先复用 `PDFPageView`、`PDFRenderingQueue` 或其既有机制，外层负责横向几何和输入策略。**不要一页一个独立文档／worker，也不要用 `Promise.all` 无限制启动全部页面绘制。仅调用低层 `page.render()` 时，不会自动获得 viewer 层的缓存、局部高清、缩放延迟和输入管理，需要自己接入。
 
@@ -261,7 +261,7 @@ PDF.js 官方基准说明要求性能改动提供对照；示例对同一测试�
 
 Firefox Talos `pdfpaint` 的定义为：
 
-> “reporting: time from *performance.timing.navigationStart* to *pagerendered* event in ms (lower is better)” [S23]
+> “reporting: time from _performance.timing.navigationStart_ to _pagerendered_ event in ms (lower is better)” [S23]
 
 文档描述按 PDF 集合分块、每块 100 个 PDF、每个 5 次迭代；本地不指定 chunk 时默认只跑一个 cycle。PDF.js Wiki 将其概括为打开 PDF 到第一页绘制完成。[S22][S23]
 
@@ -269,13 +269,13 @@ Firefox Talos `pdfpaint` 的定义为：
 
 ### 5.2 具体证据及其适用范围
 
-| 来源与时间 | 原文／结果 | 能推出什么；不能推出什么 |
-| --- | --- | --- |
-| #19856，2025-04 合入 | “with wuppertal_2012.pdf on Windows, displaying it at 150% takes around 14 min !!! without this patch when it takes only around 14 sec with.” | 维护者给出明确文件、平台、缩放和前后对照；大型可见画布更新频率可能造成灾难性开销。不能把约 60 倍当作所有 PDF 的提升，也不能把 14 秒当作当前 Electron 的实测值。[S20] |
-| #20546，2026-01 合入 | “The decoder is ~4x faster than the JS decoder on large images.” | 支持 WASM JBIG2 改善特定解码瓶颈。缺完整硬件、分布和端到端数据，不能推广为整页／整书四倍。[S07] |
-| #19043，2024-12 实验，2025-08 合入 | “a low-resolution image … taking 12 seconds”／“the ‘detail view’ … taking only 1.4 seconds and only running one fifth of the PDF operations” | 展示局部操作过滤的潜力，**不是等工作量 A/B**：首次低清全页与后续局部高清范围不同，且作者同帖承认当时尚有显示错误。不能当成当前稳定版普遍快 8.6 倍。[S24] |
-| #21442，2026-06 | 20 页／2000 高亮，`getAnnotations()` 约 106 → 516 ms | 有附件、脚本、版本和系统的用户回归报告；当前源码仍有对应额外工作。不是 raster benchmark，也不是本轮复测。[S12] |
-| #14652，2022-03 | 缩放白屏等待 5–10 秒 | 历史复杂矢量反例，有附件和维护者分析；不能直接代表 v6.3.289。[S08] |
+| 来源与时间                         | 原文／结果                                                                                                                                    | 能推出什么；不能推出什么                                                                                                                                             |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #19856，2025-04 合入               | “with wuppertal_2012.pdf on Windows, displaying it at 150% takes around 14 min !!! without this patch when it takes only around 14 sec with.” | 维护者给出明确文件、平台、缩放和前后对照；大型可见画布更新频率可能造成灾难性开销。不能把约 60 倍当作所有 PDF 的提升，也不能把 14 秒当作当前 Electron 的实测值。[S20] |
+| #20546，2026-01 合入               | “The decoder is ~4x faster than the JS decoder on large images.”                                                                              | 支持 WASM JBIG2 改善特定解码瓶颈。缺完整硬件、分布和端到端数据，不能推广为整页／整书四倍。[S07]                                                                      |
+| #19043，2024-12 实验，2025-08 合入 | “a low-resolution image … taking 12 seconds”／“the ‘detail view’ … taking only 1.4 seconds and only running one fifth of the PDF operations”  | 展示局部操作过滤的潜力，**不是等工作量 A/B**：首次低清全页与后续局部高清范围不同，且作者同帖承认当时尚有显示错误。不能当成当前稳定版普遍快 8.6 倍。[S24]             |
+| #21442，2026-06                    | 20 页／2000 高亮，`getAnnotations()` 约 106 → 516 ms                                                                                          | 有附件、脚本、版本和系统的用户回归报告；当前源码仍有对应额外工作。不是 raster benchmark，也不是本轮复测。[S12]                                                       |
+| #14652，2022-03                    | 缩放白屏等待 5–10 秒                                                                                                                          | 历史复杂矢量反例，有附件和维护者分析；不能直接代表 v6.3.289。[S08]                                                                                                   |
 
 尤其值得注意：#19856 的提升来自提交／显示策略，#20546 来自解码器实现。**性能由具体工作量、算法、缓存、调度和浏览器后端共同决定，不是“JS 必慢”或“原生必快”的语言标签。**本轮证据既不能证明 PDF.js 全面领先，也不能证明原生方案必胜。
 
@@ -307,12 +307,12 @@ Firefox Talos `pdfpaint` 的定义为：
 
 **建议首版选择 Electron + PDF.js；不因性能印象直接换成原生引擎，也不同时维护两套引擎。** 若目标文档暴露出解析／绘制瓶颈，优先评估 PDFium WASM；只有原生路径能提供明确的端到端收益时，再承担原生发布成本。这是当前需求下的工程取舍，不是 PDF.js 最快的断言。
 
-| 方案 | 已核实的能力 | 对 PanoPDF 的主要代价 | 建议 |
-| --- | --- | --- | --- |
-| PDF.js | 页面绘制、文字层、注释／链接层、搜索控制器及 viewer 调度 | 标准 Canvas 指令仍可能占用 UI 线程；低层 render 不自动附送 viewer 优化 | 首版首选 |
-| PDFium WASM | 可按页／区域输出位图；现有封装提供文字几何与搜索 | Worker、内存、像素传输和交互层仍需集成 | 首选替代候选，不预设一定更快 |
-| PDFium 原生 | 公开 C API 支持位图、变换／裁剪、文字与链接 | 原生桥接、IPC、三平台二进制部署、签名和引擎安全更新 | 当前不优先 |
-| MuPDF WASM／原生 | 官方接口支持渲染、结构化文字、搜索及选择辅助 | AGPL 合规或商业授权；原生方案另有部署成本 | 授权方向明确后再考虑 |
+| 方案             | 已核实的能力                                             | 对 PanoPDF 的主要代价                                                  | 建议                         |
+| ---------------- | -------------------------------------------------------- | ---------------------------------------------------------------------- | ---------------------------- |
+| PDF.js           | 页面绘制、文字层、注释／链接层、搜索控制器及 viewer 调度 | 标准 Canvas 指令仍可能占用 UI 线程；低层 render 不自动附送 viewer 优化 | 首版首选                     |
+| PDFium WASM      | 可按页／区域输出位图；现有封装提供文字几何与搜索         | Worker、内存、像素传输和交互层仍需集成                                 | 首选替代候选，不预设一定更快 |
+| PDFium 原生      | 公开 C API 支持位图、变换／裁剪、文字与链接              | 原生桥接、IPC、三平台二进制部署、签名和引擎安全更新                    | 当前不优先                   |
+| MuPDF WASM／原生 | 官方接口支持渲染、结构化文字、搜索及选择辅助             | AGPL 合规或商业授权；原生方案另有部署成本                              | 授权方向明确后再考虑         |
 
 ### 7.1 Electron 内置 PDFium 不能当作现成渲染 SDK
 

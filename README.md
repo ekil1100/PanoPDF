@@ -26,7 +26,7 @@ bun run dist         # Build and package for the current platform
 
 `vp dev` 启动内置网页服务器，`vp run dev` 执行桌面启动脚本。完整构建使用 `bun run build` 或 `vp run build`，包含前置类型检查；安装包使用 electron-builder，`vp pack` 用于库构建。全局 `vp` 为可选工具，项目脚本使用已安装的本地版本。
 
-检查、测试与构建配置集中在 `vite.config.ts`。`check.fmt: false` 保留历史文件排版，避免工具链迁移扩大为全库格式化；修改的文件使用 `bunx vp fmt <paths>` 和 `bunx vp fmt --check <paths>`。`bun run check` 保留类型感知 lint 与类型检查。现有 reader/preload 集合快照有 4 条冗余展开建议，保留原实现；安全过滤表达式与 Playwright 必需的空对象参数有定向规则说明。
+检查、测试与构建配置集中在 `vite.config.ts`。`bun run check` 统一执行全库格式检查、类型感知 lint 与类型检查。使用 `bunx vp fmt` 格式化全库，或用 `bunx vp fmt <paths>` 格式化指定文件。安全过滤表达式与 Playwright 必需的空对象参数有定向规则说明。
 
 ## 源码结构
 

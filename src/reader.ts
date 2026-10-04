@@ -1,29 +1,61 @@
 import {
-  AnnotationEditorType, AnnotationMode, GlobalWorkerOptions, PasswordResponses,
-  PDFWorker, getDocument,
+  AnnotationEditorType,
+  AnnotationMode,
+  GlobalWorkerOptions,
+  PasswordResponses,
+  PDFWorker,
+  getDocument,
 } from 'pdfjs-dist';
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist';
 import {
-  EventBus, FindState as PDFFindState, PDFFindController, PDFLinkService,
-  PDFViewer, ScrollMode,
+  EventBus,
+  FindState as PDFFindState,
+  PDFFindController,
+  PDFLinkService,
+  PDFViewer,
+  ScrollMode,
 } from 'pdfjs-dist/web/pdf_viewer.mjs';
 import type { PDFPageView } from 'pdfjs-dist/web/pdf_viewer.mjs';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import 'pdfjs-dist/web/pdf_viewer.css';
 import './reader.css';
 import type {
-  FindState, OutlineEntry, ReaderCallbacks, ReaderController, ReadingPosition,
+  FindState,
+  OutlineEntry,
+  ReaderCallbacks,
+  ReaderController,
+  ReadingPosition,
 } from './contracts.ts';
 import {
-  MIN_SCALE, VIEW_PADDING, anchorPage, clampScale, fitScale, heightScale, isPageWheel,
-  normalizePosition, pageStep, pdfErrorMessage, positiveInteger, safeExternalUrl, wheelPixels,
+  MIN_SCALE,
+  VIEW_PADDING,
+  anchorPage,
+  clampScale,
+  fitScale,
+  heightScale,
+  isPageWheel,
+  normalizePosition,
+  pageStep,
+  pdfErrorMessage,
+  positiveInteger,
+  safeExternalUrl,
+  wheelPixels,
 } from './reader-layout.ts';
 import type { PageSize } from './reader-layout.ts';
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
-interface Anchor { page: number; left: number; top: number; x: number; y: number }
-interface OutlineTarget { dest?: string | unknown[] | null; url?: string | null }
+interface Anchor {
+  page: number;
+  left: number;
+  top: number;
+  x: number;
+  y: number;
+}
+interface OutlineTarget {
+  dest?: string | unknown[] | null;
+  url?: string | null;
+}
 interface Session {
   abort: AbortController;
   bus: EventBus;
@@ -48,14 +80,20 @@ const emptyFind = (): FindState => ({ current: 0, total: 0, pending: false, notF
 function untilAborted<T>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise((resolve, reject) => {
     const abort = () => reject(new DOMException('Reader operation cancelled', 'AbortError'));
-    if (signal.aborted) { void promise.catch(() => {}); abort(); return; }
+    if (signal.aborted) {
+      void promise.catch(() => {});
+      abort();
+      return;
+    }
     signal.addEventListener('abort', abort, { once: true });
     promise.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort));
   });
 }
 
 export function createReader(
-  container: HTMLDivElement, viewer: HTMLDivElement, callbacks: ReaderCallbacks,
+  container: HTMLDivElement,
+  viewer: HTMLDivElement,
+  callbacks: ReaderCallbacks,
 ): ReaderController {
   let settings = normalizePosition();
   let session: Session | null = null;
@@ -74,9 +112,13 @@ export function createReader(
   const resources = `${import.meta.env.BASE_URL}pdfjs/`;
 
   const isCurrent = (s: Session) => session === s && !s.abort.signal.aborted && !destroyed;
-  const ready = () => session?.ready && !destroyed ? session : null;
-  const pageView = (s: Session, page: number): PDFPageView | undefined => s.pdf.getPageView(page - 1);
-  const viewportSize = (): PageSize => ({ width: container.clientWidth, height: container.clientHeight });
+  const ready = () => (session?.ready && !destroyed ? session : null);
+  const pageView = (s: Session, page: number): PDFPageView | undefined =>
+    s.pdf.getPageView(page - 1);
+  const viewportSize = (): PageSize => ({
+    width: container.clientWidth,
+    height: container.clientHeight,
+  });
 
   function pageSizes(s: Session, count: number): PageSize[] {
     const first = Math.min(s.pdf.currentPageNumber, Math.max(1, s.pdf.pagesCount - count + 1));
@@ -90,7 +132,12 @@ export function createReader(
     if (!s?.ready) return [];
     const choices: { pages: number; scale: number }[] = [];
     for (let pages = 1; pages <= s.pdf.pagesCount; pages++) {
-      const scale = fitScale(viewportSize(), pageSizes(s, pages), settings.layout, settings.columns);
+      const scale = fitScale(
+        viewportSize(),
+        pageSizes(s, pages),
+        settings.layout,
+        settings.columns,
+      );
       choices.push({ pages, scale });
       if (scale <= MIN_SCALE) break;
     }
@@ -100,15 +147,29 @@ export function createReader(
   function emitState() {
     if (destroyed) return;
     const s = ready();
-    const key = JSON.stringify([!!s, s?.pdf.currentPageNumber, s?.pdf.pagesCount, s?.pdf.currentScale,
-      settings, container.clientWidth, container.clientHeight, geometryVersion]);
+    const key = JSON.stringify([
+      !!s,
+      s?.pdf.currentPageNumber,
+      s?.pdf.pagesCount,
+      s?.pdf.currentScale,
+      settings,
+      container.clientWidth,
+      container.clientHeight,
+      geometryVersion,
+    ]);
     if (key === lastStateKey) return;
     lastStateKey = key;
     callbacks.onState({
-      loaded: !!s, page: s?.pdf.currentPageNumber ?? 0, pages: s?.pdf.pagesCount ?? 0,
-      scale: s?.pdf.currentScale ?? settings.scale, layout: settings.layout,
-      columns: settings.columns, zoomMode: settings.zoomMode, fitPages: settings.fitPages,
-      scrollInput: settings.scrollInput, zoomChoices: zoomChoices(s),
+      loaded: !!s,
+      page: s?.pdf.currentPageNumber ?? 0,
+      pages: s?.pdf.pagesCount ?? 0,
+      scale: s?.pdf.currentScale ?? settings.scale,
+      layout: settings.layout,
+      columns: settings.columns,
+      zoomMode: settings.zoomMode,
+      fitPages: settings.fitPages,
+      scrollInput: settings.scrollInput,
+      zoomChoices: zoomChoices(s),
     });
   }
 
@@ -119,26 +180,47 @@ export function createReader(
     const visible = s.pdf._getVisiblePages() as { views: { view: PDFPageView }[] };
     const x = point?.x ?? 0;
     const y = point?.y ?? 0;
-    const pointed = point ? visible.views.map(item => item.view).find(item => {
-      const rect = item.div.getBoundingClientRect();
-      return box.left + x >= rect.left && box.left + x <= rect.right &&
-        box.top + y >= rect.top && box.top + y <= rect.bottom;
-    }) : undefined;
+    const pointed = point
+      ? visible.views
+          .map((item) => item.view)
+          .find((item) => {
+            const rect = item.div.getBoundingClientRect();
+            return (
+              box.left + x >= rect.left &&
+              box.left + x <= rect.right &&
+              box.top + y >= rect.top &&
+              box.top + y <= rect.bottom
+            );
+          })
+      : undefined;
     // A preceding row's tiny sliver must not replace the reading anchor.
-    const page = anchorPage(visible.views.map(item => Number(item.view.id)), s.pdf.currentPageNumber,
-      pointed ? Number(pointed.id) : undefined);
+    const page = anchorPage(
+      visible.views.map((item) => Number(item.view.id)),
+      s.pdf.currentPageNumber,
+      pointed ? Number(pointed.id) : undefined,
+    );
     const view = pageView(s, page);
     if (!view) return null;
     const rect = view.div.getBoundingClientRect();
     const localX = Math.max(0, Math.min(rect.width, box.left + x - rect.left));
     const localY = Math.max(0, Math.min(rect.height, box.top + y - rect.top));
     const [left, top] = view.viewport.convertToPdfPoint(localX, localY);
-    return { page: Number(view.id), left: left!, top: top!, x: rect.left + localX - box.left, y: rect.top + localY - box.top };
+    return {
+      page: Number(view.id),
+      left: left!,
+      top: top!,
+      x: rect.left + localX - box.left,
+      y: rect.top + localY - box.top,
+    };
   }
 
   function centerShortPage(s: Session, page = s.pdf.currentPageNumber) {
     const view = pageView(s, page);
-    if (settings.layout === 'horizontal' && view && view.height <= container.clientHeight - 2 * VIEW_PADDING) {
+    if (
+      settings.layout === 'horizontal' &&
+      view &&
+      view.height <= container.clientHeight - 2 * VIEW_PADDING
+    ) {
       container.scrollTop = 0;
     }
   }
@@ -160,9 +242,15 @@ export function createReader(
   function getPosition(): ReadingPosition | null {
     const s = ready();
     const anchor = capture();
-    return s && anchor ? {
-      ...settings, page: anchor.page, scale: s.pdf.currentScale, left: anchor.left, top: anchor.top,
-    } : null;
+    return s && anchor
+      ? {
+          ...settings,
+          page: anchor.page,
+          scale: s.pdf.currentScale,
+          left: anchor.left,
+          top: anchor.top,
+        }
+      : null;
   }
 
   function saveSoon() {
@@ -180,7 +268,10 @@ export function createReader(
   function centerPage(view: PDFPageView) {
     // Reuse PDF.js's CSS dimension expression so zoom needs no per-page DOM loop.
     view.div.style.setProperty('--reader-page-height', view.div.style.height);
-    session?.pageGeometry.set(Number(view.id), `${(view.viewport.width / view.scale).toFixed(3)}:${(view.viewport.height / view.scale).toFixed(3)}`);
+    session?.pageGeometry.set(
+      Number(view.id),
+      `${(view.viewport.width / view.scale).toFixed(3)}:${(view.viewport.height / view.scale).toFixed(3)}`,
+    );
   }
 
   function applyLayout(s: Session) {
@@ -200,9 +291,15 @@ export function createReader(
   }
 
   function selectedScale(s: Session): number {
-    if (settings.zoomMode === 'height') return heightScale(container.clientHeight, pageSizes(s, 1)[0]!.height);
+    if (settings.zoomMode === 'height')
+      return heightScale(container.clientHeight, pageSizes(s, 1)[0]!.height);
     if (settings.zoomMode === 'pages') {
-      return fitScale(viewportSize(), pageSizes(s, settings.fitPages), settings.layout, settings.columns);
+      return fitScale(
+        viewportSize(),
+        pageSizes(s, settings.fitPages),
+        settings.layout,
+        settings.columns,
+      );
     }
     return settings.scale;
   }
@@ -302,9 +399,13 @@ export function createReader(
           const explicit = typeof dest === 'string' ? await doc.getDestination(dest) : dest;
           if (!isCurrent(s) || !Array.isArray(explicit)) return;
           const ref = explicit[0];
-          const page = typeof ref === 'number' ? ref + 1 : await doc.getPageIndex(ref) + 1;
+          const page = typeof ref === 'number' ? ref + 1 : (await doc.getPageIndex(ref)) + 1;
           if (!isCurrent(s) || page < 1 || page > doc.numPages) return;
-          s.pdf.scrollPageIntoView({ pageNumber: page, destArray: explicit, ignoreDestinationZoom: true });
+          s.pdf.scrollPageIntoView({
+            pageNumber: page,
+            destArray: explicit,
+            ignoreDestinationZoom: true,
+          });
           centerShortPage(s, page);
           saveSoon();
         } catch {
@@ -316,18 +417,44 @@ export function createReader(
     const find = new PDFFindController({ eventBus: bus, linkService: links });
     // 6.3.289 implements abortSignal, but its generated option types omit it.
     const options = {
-      container, viewer, eventBus: bus, linkService: links, findController: find,
-      abortSignal: abort.signal, annotationMode: AnnotationMode.ENABLE,
-      annotationEditorMode: AnnotationEditorType.DISABLE, removePageBorders: true,
-      maxCanvasPixels: 4 * 1024 * 1024, maxCanvasDim: 8192, capCanvasAreaFactor: 100,
-      enableDetailCanvas: true, enableOptimizedPartialRendering: false,
+      container,
+      viewer,
+      eventBus: bus,
+      linkService: links,
+      findController: find,
+      abortSignal: abort.signal,
+      annotationMode: AnnotationMode.ENABLE,
+      annotationEditorMode: AnnotationEditorType.DISABLE,
+      removePageBorders: true,
+      maxCanvasPixels: 4 * 1024 * 1024,
+      maxCanvasDim: 8192,
+      capCanvasAreaFactor: 100,
+      enableDetailCanvas: true,
+      enableOptimizedPartialRendering: false,
       imageResourcesPath: `${resources}images/`,
     };
     const pdf = new PDFViewer(options);
     links.setViewer(pdf);
-    s = { abort, bus, pdf, links, find, ready: false, targets: new Map(), pageGeometry: new Map(), searchActive: false, findState: emptyFind() };
+    s = {
+      abort,
+      bus,
+      pdf,
+      links,
+      find,
+      ready: false,
+      targets: new Map(),
+      pageGeometry: new Map(),
+      searchActive: false,
+      findState: emptyFind(),
+    };
     const listen = (name: string, handler: (event: any) => void) => {
-      bus.on(name, (event: unknown) => { if (isCurrent(s)) handler(event); }, { signal: abort.signal });
+      bus.on(
+        name,
+        (event: unknown) => {
+          if (isCurrent(s)) handler(event);
+        },
+        { signal: abort.signal },
+      );
     };
     listen('updateviewarea', () => {
       if (!mutating) {
@@ -344,17 +471,24 @@ export function createReader(
       centerPage(view);
       if (changed && s.ready) {
         geometryVersion++;
-        queueMicrotask(() => { if (isCurrent(s)) refresh(stableAnchor); });
+        queueMicrotask(() => {
+          if (isCurrent(s)) refresh(stableAnchor);
+        });
       }
     });
-    listen('pagerendered', ({ error }) => { if (error) callbacks.onError(pdfErrorMessage(error)); });
+    listen('pagerendered', ({ error }) => {
+      if (error) callbacks.onError(pdfErrorMessage(error));
+    });
     listen('pagesloaded', () => {
       if (!s.ready) return;
       for (let page = 1; page <= pdf.pagesCount; page++) centerPage(pageView(s, page)!);
       geometryVersion++;
       refresh(stableAnchor);
     });
-    const findUpdate = (event: { state?: number; matchesCount?: { current: number; total: number } }) => {
+    const findUpdate = (event: {
+      state?: number;
+      matchesCount?: { current: number; total: number };
+    }) => {
       if (!s.searchActive) return;
       if (event.matchesCount) Object.assign(s.findState, event.matchesCount);
       if (event.state !== undefined) {
@@ -383,19 +517,23 @@ export function createReader(
       // Supplying a native port makes a failed worker an error, never a fake worker.
       s.worker = new Worker(workerUrl, { type: 'module' });
       const workerFailure = new Promise<never>((_, reject) => {
-        s!.worker!.addEventListener('error', () => {
-          current.workerFailed = true;
-          const error = new Error('PDF module worker failed');
-          error.name = 'WorkerError';
-          reject(error);
-          if (isCurrent(current) && current.ready) {
-            callbacks.onError(pdfErrorMessage(error));
-            detach();
-            resetCallbacks();
-          }
-        }, { signal: s!.abort.signal });
+        s!.worker!.addEventListener(
+          'error',
+          () => {
+            current.workerFailed = true;
+            const error = new Error('PDF module worker failed');
+            error.name = 'WorkerError';
+            reject(error);
+            if (isCurrent(current) && current.ready) {
+              callbacks.onError(pdfErrorMessage(error));
+              detach();
+              resetCallbacks();
+            }
+          },
+          { signal: s!.abort.signal },
+        );
       });
-      const workerReady = new Promise<void>(resolve => {
+      const workerReady = new Promise<void>((resolve) => {
         const onMessage = (event: MessageEvent) => {
           if (event.data?.action !== 'ready') return;
           current.worker!.removeEventListener('message', onMessage);
@@ -409,9 +547,14 @@ export function createReader(
       s.pdfWorker = PDFWorker.create({ port: s.worker });
       // Eval-based compilation was removed in 6.3.289; retain the explicit policy.
       const documentOptions = {
-        data, worker: s.pdfWorker, isEvalSupported: false, enableXfa: false,
-        cMapUrl: `${resources}cmaps/`, cMapPacked: true,
-        standardFontDataUrl: `${resources}standard_fonts/`, wasmUrl: `${resources}wasm/`,
+        data,
+        worker: s.pdfWorker,
+        isEvalSupported: false,
+        enableXfa: false,
+        cMapUrl: `${resources}cmaps/`,
+        cMapPacked: true,
+        standardFontDataUrl: `${resources}standard_fonts/`,
+        wasmUrl: `${resources}wasm/`,
         useWasm: true,
       };
       s.task = getDocument(documentOptions);
@@ -419,12 +562,21 @@ export function createReader(
         if (!isCurrent(current)) return;
         void (async () => {
           try {
-            const password = await untilAborted(callbacks.onPassword(reason === PasswordResponses.INCORRECT_PASSWORD), current.abort.signal);
+            const password = await untilAborted(
+              callbacks.onPassword(reason === PasswordResponses.INCORRECT_PASSWORD),
+              current.abort.signal,
+            );
             if (!isCurrent(current)) return;
-            if (password === null) { detach(); resetCallbacks(); }
-            else updatePassword(password);
+            if (password === null) {
+              detach();
+              resetCallbacks();
+            } else updatePassword(password);
           } catch {
-            if (isCurrent(current)) { callbacks.onError('未能获取 PDF 密码，请重新打开文件。'); detach(); resetCallbacks(); }
+            if (isCurrent(current)) {
+              callbacks.onError('未能获取 PDF 密码，请重新打开文件。');
+              detach();
+              resetCallbacks();
+            }
           }
         })();
       };
@@ -432,7 +584,9 @@ export function createReader(
       if (token !== generation || !isCurrent(s)) return;
       s.document = doc;
       s.links.setDocument(doc);
-      const initialized = new Promise<void>(resolve => s!.bus.on('pagesinit', resolve, { once: true, signal: s!.abort.signal }));
+      const initialized = new Promise<void>((resolve) =>
+        s!.bus.on('pagesinit', resolve, { once: true, signal: s!.abort.signal }),
+      );
       s.pdf.setDocument(doc);
       // pagesPromise rejects if first-page initialization fails; it need not finish first.
       const initFailure = s.pdf.pagesPromise.then(() => new Promise<never>(() => {}));
@@ -459,18 +613,19 @@ export function createReader(
       s.pdf.update();
       emitState();
       saveSoon();
-      const outline = await untilAborted(doc.getOutline(), s.abort.signal).catch(error => {
+      const outline = await untilAborted(doc.getOutline(), s.abort.signal).catch((error) => {
         if (isCurrent(current)) callbacks.onError('PDF 已打开，但无法读取文档目录。');
         if (current.abort.signal.aborted) throw error;
         return null;
       });
       if (!isCurrent(s)) return;
       type PDFOutline = NonNullable<typeof outline>;
-      const entries = (items: PDFOutline): OutlineEntry[] => items.map(item => {
-        const target = Symbol('outline');
-        current.targets.set(target, { dest: item.dest, url: item.url });
-        return { title: item.title, children: entries(item.items), target };
-      });
+      const entries = (items: PDFOutline): OutlineEntry[] =>
+        items.map((item) => {
+          const target = Symbol('outline');
+          current.targets.set(target, { dest: item.dest, url: item.url });
+          return { title: item.title, children: entries(item.items), target };
+        });
       callbacks.onOutline(entries(outline ?? []));
     } catch (error) {
       mutating = false;
@@ -485,15 +640,28 @@ export function createReader(
     const s = ready();
     if (!s || event.defaultPrevented || !event.cancelable) return;
     const target = event.target instanceof Element ? event.target : null;
-    if (target?.closest('input, textarea, select, button, [contenteditable="true"], [role="textbox"]')) return;
+    if (
+      target?.closest('input, textarea, select, button, [contenteditable="true"], [role="textbox"]')
+    )
+      return;
     const selection = window.getSelection();
-    if (event.buttons || (selection && !selection.isCollapsed && selection.anchorNode && viewer.contains(selection.anchorNode))) return;
+    if (
+      event.buttons ||
+      (selection &&
+        !selection.isCollapsed &&
+        selection.anchorNode &&
+        viewer.contains(selection.anchorNode))
+    )
+      return;
     const [dx, dy] = wheelPixels(event, container.clientHeight);
     if (event.ctrlKey || event.metaKey) {
       event.preventDefault();
       const box = container.getBoundingClientRect();
       settings.zoomMode = 'custom';
-      changeScale(s.pdf.currentScale * Math.exp(-dy * 0.002), capture({ x: event.clientX - box.left, y: event.clientY - box.top }));
+      changeScale(
+        s.pdf.currentScale * Math.exp(-dy * 0.002),
+        capture({ x: event.clientX - box.left, y: event.clientY - box.top }),
+      );
       return;
     }
     if (settings.layout !== 'horizontal') return;
@@ -507,8 +675,10 @@ export function createReader(
     if (view && view.height > container.clientHeight - 2 * VIEW_PADDING) {
       const rect = view.div.getBoundingClientRect();
       const box = container.getBoundingClientRect();
-      if ((dy > 0 && rect.bottom > box.bottom - VIEW_PADDING + 1) ||
-          (dy < 0 && rect.top < box.top + VIEW_PADDING - 1)) {
+      if (
+        (dy > 0 && rect.bottom > box.bottom - VIEW_PADDING + 1) ||
+        (dy < 0 && rect.top < box.top + VIEW_PADDING - 1)
+      ) {
         event.preventDefault();
         container.scrollTop += dy;
         return;
@@ -528,23 +698,33 @@ export function createReader(
       const page = pageView(s, index + 1)!;
       return { start: page.div.offsetLeft, size: page.width };
     });
-    container.scrollTo({ left: pageStep(extents, container.scrollLeft, container.clientWidth, Math.sign(dy)), behavior: 'instant' });
+    container.scrollTo({
+      left: pageStep(extents, container.scrollLeft, container.clientWidth, Math.sign(dy)),
+      behavior: 'instant',
+    });
   }
 
   const resize = new ResizeObserver(() => {
     if (resizeFrame || !ready()) return;
     // Navigation may update the anchor before this frame runs; never restore the queued snapshot.
-    resizeFrame = requestAnimationFrame(() => { resizeFrame = 0; refresh(stableAnchor); });
+    resizeFrame = requestAnimationFrame(() => {
+      resizeFrame = 0;
+      refresh(stableAnchor);
+    });
   });
   resize.observe(container);
   container.addEventListener('wheel', wheel, { passive: false, signal: lifetime.signal });
   const externalClick = (event: MouseEvent) => {
-    const link = event.target instanceof Element ? event.target.closest<HTMLAnchorElement>('a[data-reader-external]') : null;
+    const link =
+      event.target instanceof Element
+        ? event.target.closest<HTMLAnchorElement>('a[data-reader-external]')
+        : null;
     if (!link) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     const url = safeExternalUrl(link.dataset.readerExternal ?? '');
-    if (ready() && url && (event.type === 'click' || event.button === 1)) callbacks.onExternalLink(url);
+    if (ready() && url && (event.type === 'click' || event.button === 1))
+      callbacks.onExternalLink(url);
   };
   container.addEventListener('click', externalClick, { capture: true, signal: lifetime.signal });
   container.addEventListener('auxclick', externalClick, { capture: true, signal: lifetime.signal });
@@ -559,7 +739,10 @@ export function createReader(
       await Promise.all(releases);
     },
     async destroy() {
-      if (destroyed) { await Promise.all(releases); return; }
+      if (destroyed) {
+        await Promise.all(releases);
+        return;
+      }
       ++generation;
       destroyed = true;
       lifetime.abort();
@@ -610,21 +793,34 @@ export function createReader(
       if (!s || !Number.isFinite(page)) return;
       s.pdf.currentPageNumber = Math.min(s.pdf.pagesCount, positiveInteger(page));
       if (settings.zoomMode !== 'custom') refresh();
-      else { centerShortPage(s); emitState(); saveSoon(); }
+      else {
+        centerShortPage(s);
+        emitState();
+        saveSoon();
+      }
     },
     zoomBy(factor) {
       const s = ready();
-      if (s && Number.isFinite(factor) && factor > 0) controller.setScale(s.pdf.currentScale * factor);
+      if (s && Number.isFinite(factor) && factor > 0)
+        controller.setScale(s.pdf.currentScale * factor);
     },
     find(query, options = {}) {
       const s = ready();
       if (!s) return;
-      if (!query) { controller.closeFind(); return; }
+      if (!query) {
+        controller.closeFind();
+        return;
+      }
       s.searchActive = true;
       s.bus.dispatch('find', {
-        source: controller, type: options.again ? 'again' : '', query,
-        caseSensitive: false, entireWord: false, highlightAll: true,
-        findPrevious: options.previous ?? false, matchDiacritics: false,
+        source: controller,
+        type: options.again ? 'again' : '',
+        query,
+        caseSensitive: false,
+        entireWord: false,
+        highlightAll: true,
+        findPrevious: options.previous ?? false,
+        matchDiacritics: false,
       });
     },
     closeFind() {
@@ -643,11 +839,15 @@ export function createReader(
       if (url) callbacks.onExternalLink(url);
       else if (entry.dest) await s.links.goToDestination(entry.dest);
     },
-    refreshLayout() { refresh(stableAnchor ?? capture()); },
+    refreshLayout() {
+      refresh(stableAnchor ?? capture());
+    },
     getPosition,
   };
   container.dataset.layout = settings.layout;
   container.dataset.scrollInput = settings.scrollInput;
-  queueMicrotask(() => { if (!session && !destroyed) emitState(); });
+  queueMicrotask(() => {
+    if (!session && !destroyed) emitState();
+  });
   return controller;
 }

@@ -29,10 +29,23 @@ export interface RecentFile {
   page: number;
 }
 
-export type AppCommand = 'open' | 'close-document' | 'find' | 'zoom-in' | 'zoom-out' | 'actual-size';
+export type AppCommand =
+  | 'open'
+  | 'close-document'
+  | 'find'
+  | 'zoom-in'
+  | 'zoom-out'
+  | 'actual-size';
 export type WindowAction = 'minimize' | 'toggle-maximize' | 'close';
-export interface WindowState { maximized: boolean; fullscreen: boolean }
-export interface StartupState { firstRun: boolean; file: OpenedFile | null; error?: string }
+export interface WindowState {
+  maximized: boolean;
+  fullscreen: boolean;
+}
+export interface StartupState {
+  firstRun: boolean;
+  file: OpenedFile | null;
+  error?: string;
+}
 
 export interface DesktopBridge {
   platform: string;
@@ -51,7 +64,9 @@ export interface DesktopBridge {
 }
 
 declare global {
-  interface Window { panopdf?: DesktopBridge }
+  interface Window {
+    panopdf?: DesktopBridge;
+  }
 }
 
 export interface OutlineEntry {

@@ -19,9 +19,15 @@ export function normalizePosition(position?: ReadingPosition): ReadingPosition {
     scale: clampScale(position?.scale ?? 1),
     layout: position?.layout === 'vertical' ? 'vertical' : 'horizontal',
     columns: positiveInteger(position?.columns ?? 1),
-    zoomMode: position?.zoomMode === 'custom' || position?.zoomMode === 'pages' ? position.zoomMode : 'height',
+    zoomMode:
+      position?.zoomMode === 'custom' || position?.zoomMode === 'pages'
+        ? position.zoomMode
+        : 'height',
     fitPages: positiveInteger(position?.fitPages ?? 1),
-    scrollInput: position?.scrollInput === 'page' || position?.scrollInput === 'smooth' ? position.scrollInput : 'auto',
+    scrollInput:
+      position?.scrollInput === 'page' || position?.scrollInput === 'smooth'
+        ? position.scrollInput
+        : 'auto',
     ...(Number.isFinite(position?.left) ? { left: position!.left } : {}),
     ...(Number.isFinite(position?.top) ? { top: position!.top } : {}),
   };
@@ -30,15 +36,24 @@ export function normalizePosition(position?: ReadingPosition): ReadingPosition {
 // Visible IDs are ordered by PDFViewer's visibility ranking, not document order.
 export function anchorPage(visible: number[], current: number, pointed?: number): number {
   if (pointed !== undefined && visible.includes(pointed)) return pointed;
-  return visible.includes(current) ? current : visible[0] ?? current;
+  return visible.includes(current) ? current : (visible[0] ?? current);
 }
 
-export interface PageSize { width: number; height: number }
+export interface PageSize {
+  width: number;
+  height: number;
+}
 
 // Sizes are CSS pixels at viewer scale 1, including PDF user units/rotation.
-export function fitScale(viewport: PageSize, pages: PageSize[], layout: LayoutMode, columns: number): number {
+export function fitScale(
+  viewport: PageSize,
+  pages: PageSize[],
+  layout: LayoutMode,
+  columns: number,
+): number {
   if (!pages.length || viewport.width <= 0 || viewport.height <= 0) return 1;
-  const count = layout === 'horizontal' ? pages.length : Math.min(positiveInteger(columns), pages.length);
+  const count =
+    layout === 'horizontal' ? pages.length : Math.min(positiveInteger(columns), pages.length);
   const widths = Array<number>(count).fill(0);
   const heights: number[] = [];
   pages.forEach((page, index) => {
@@ -49,26 +64,44 @@ export function fitScale(viewport: PageSize, pages: PageSize[], layout: LayoutMo
   const width = widths.reduce((sum, value) => sum + value, 0);
   const height = heights.reduce((sum, value) => sum + value, 0);
   // PDFViewer.updateScale quantizes to 1%; round fits down to avoid clipping.
-  return clampScale(Math.floor(100 * Math.min(
-    Math.max(1, viewport.width - 2 * VIEW_PADDING - (count - 1) * PAGE_GAP) / width,
-    Math.max(1, viewport.height - 2 * VIEW_PADDING - (heights.length - 1) * PAGE_GAP) / height,
-  )) / 100);
+  return clampScale(
+    Math.floor(
+      100 *
+        Math.min(
+          Math.max(1, viewport.width - 2 * VIEW_PADDING - (count - 1) * PAGE_GAP) / width,
+          Math.max(1, viewport.height - 2 * VIEW_PADDING - (heights.length - 1) * PAGE_GAP) /
+            height,
+        ),
+    ) / 100,
+  );
 }
 
 export function heightScale(height: number, pageHeight: number): number {
-  return clampScale(Math.floor(100 * Math.max(1, height - 2 * VIEW_PADDING) / pageHeight) / 100);
+  return clampScale(Math.floor((100 * Math.max(1, height - 2 * VIEW_PADDING)) / pageHeight) / 100);
 }
 
-export interface WheelSample { deltaX: number; deltaY: number; deltaMode: number }
+export interface WheelSample {
+  deltaX: number;
+  deltaY: number;
+  deltaMode: number;
+}
 
 // WheelEvent has no device identity. Favor continuous input when ambiguous.
-export function isPageWheel(input: ScrollInput, event: WheelSample, recentlySmooth = false): boolean {
+export function isPageWheel(
+  input: ScrollInput,
+  event: WheelSample,
+  recentlySmooth = false,
+): boolean {
   if (event.deltaX !== 0 || input === 'smooth') return false;
   if (input === 'page') return true;
   if (event.deltaMode !== 0) return true;
   const delta = Math.abs(event.deltaY);
-  return !recentlySmooth && delta >= 40 && Number.isInteger(delta) &&
-    [40, 50, 60, 100, 120].some(unit => delta % unit === 0);
+  return (
+    !recentlySmooth &&
+    delta >= 40 &&
+    Number.isInteger(delta) &&
+    [40, 50, 60, 100, 120].some((unit) => delta % unit === 0)
+  );
 }
 
 export function wheelPixels(event: WheelSample, viewportHeight: number): [number, number] {
@@ -76,13 +109,21 @@ export function wheelPixels(event: WheelSample, viewportHeight: number): [number
   return [event.deltaX * unit, event.deltaY * unit];
 }
 
-export interface PageExtent { start: number; size: number }
+export interface PageExtent {
+  start: number;
+  size: number;
+}
 
 // Oversized pages advance within the page before moving to the next page.
-export function pageStep(pages: PageExtent[], scroll: number, viewport: number, direction: number): number {
+export function pageStep(
+  pages: PageExtent[],
+  scroll: number,
+  viewport: number,
+  direction: number,
+): number {
   if (!pages.length || !direction) return scroll;
   const edge = scroll + VIEW_PADDING + 1;
-  let index = pages.findIndex(page => page.start + page.size > edge);
+  let index = pages.findIndex((page) => page.start + page.size > edge);
   if (index < 0) index = pages.length - 1;
   const page = pages[index]!;
   const start = Math.max(0, page.start - VIEW_PADDING);
@@ -93,7 +134,13 @@ export function pageStep(pages: PageExtent[], scroll: number, viewport: number, 
   }
   if (scroll > start + 1) return Math.max(start, scroll - viewport * 0.85);
   const previous = pages[index - 1];
-  return previous ? Math.max(0, previous.start - VIEW_PADDING, previous.start + previous.size - viewport + VIEW_PADDING) : 0;
+  return previous
+    ? Math.max(
+        0,
+        previous.start - VIEW_PADDING,
+        previous.start + previous.size - viewport + VIEW_PADDING,
+      )
+    : 0;
 }
 
 export function safeExternalUrl(value: string): string | null {
@@ -107,7 +154,8 @@ export function safeExternalUrl(value: string): string | null {
 
 export function pdfErrorMessage(error: unknown): string {
   const name = error instanceof Error ? error.name : '';
-  if (name === 'InvalidPDFException') return '无法打开：文件不是有效的 PDF，或内容已损坏。请尝试其他文件。';
+  if (name === 'InvalidPDFException')
+    return '无法打开：文件不是有效的 PDF，或内容已损坏。请尝试其他文件。';
   if (name === 'PasswordException') return '无法解锁 PDF，请检查密码后重新打开。';
   if (name === 'WorkerError') return 'PDF 渲染进程启动失败，请重启应用后重试。';
   return 'PDF 加载或渲染失败，请重新打开文件；若仍失败，请尝试其他 PDF。';

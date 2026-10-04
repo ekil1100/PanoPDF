@@ -5,7 +5,14 @@ const { constants } = require('node:fs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const {
-  MAX_RECENTS, MAX_SETTINGS_BYTES, record, validId, validateId, validatePath, validatePosition, UserError,
+  MAX_RECENTS,
+  MAX_SETTINGS_BYTES,
+  record,
+  validId,
+  validateId,
+  validatePath,
+  validatePosition,
+  UserError,
 } = require('./security.cjs');
 
 function sanitizeSettings(value) {
@@ -15,19 +22,42 @@ function sanitizeSettings(value) {
   const paths = new Set();
   const recents = [];
   for (const entry of value.recents.slice(0, 1000)) {
-    if (!record(entry) || !validId(entry.id) || ids.has(entry.id)
-        || !Number.isSafeInteger(entry.lastOpened) || entry.lastOpened < 0) continue;
+    if (
+      !record(entry) ||
+      !validId(entry.id) ||
+      ids.has(entry.id) ||
+      !Number.isSafeInteger(entry.lastOpened) ||
+      entry.lastOpened < 0
+    )
+      continue;
     let filePath;
-    try { filePath = validatePath(entry.path); } catch { continue; }
+    try {
+      filePath = validatePath(entry.path);
+    } catch {
+      continue;
+    }
     if (paths.has(filePath)) continue;
     let position;
-    try { position = validatePosition(entry.position); } catch { /* Ignore invalid saved positions. */ }
+    try {
+      position = validatePosition(entry.position);
+    } catch {
+      /* Ignore invalid saved positions. */
+    }
     ids.add(entry.id);
     paths.add(filePath);
-    recents.push({ id: entry.id, path: filePath, lastOpened: entry.lastOpened, ...(position ? { position } : {}) });
+    recents.push({
+      id: entry.id,
+      path: filePath,
+      lastOpened: entry.lastOpened,
+      ...(position ? { position } : {}),
+    });
   }
   recents.sort((a, b) => b.lastOpened - a.lastOpened);
-  return { version: 1, hasLaunched: value.hasLaunched === true || recents.length > 0, recents: recents.slice(0, MAX_RECENTS) };
+  return {
+    version: 1,
+    hasLaunched: value.hasLaunched === true || recents.length > 0,
+    recents: recents.slice(0, MAX_RECENTS),
+  };
 }
 
 async function atomicWrite(filePath, value) {
@@ -66,77 +96,106 @@ class SettingsStore {
       const handle = await fs.open(this.filePath, constants.O_RDONLY | (constants.O_NONBLOCK || 0));
       try {
         const stat = await handle.stat();
-        if (!stat.isFile() || stat.size > MAX_SETTINGS_BYTES) throw new Error('Settings must be a bounded regular file');
+        if (!stat.isFile() || stat.size > MAX_SETTINGS_BYTES)
+          throw new Error('Settings must be a bounded regular file');
         // Bound the allocation even if the settings file grows during the read.
         const buffer = Buffer.alloc(MAX_SETTINGS_BYTES + 1);
         const { bytesRead } = await handle.read(buffer, 0, buffer.length, 0);
         if (bytesRead > MAX_SETTINGS_BYTES) throw new Error('Settings file is too large');
         this.state = sanitizeSettings(JSON.parse(buffer.subarray(0, bytesRead).toString('utf8')));
-      } finally { await handle.close(); }
+      } finally {
+        await handle.close();
+      }
     } catch (error) {
       this.state = sanitizeSettings(null);
       if (error.code !== 'ENOENT') {
         this.warn('Ignoring unreadable or corrupt settings:', error.message);
-        this.loadError = '无法读取上次的设置，请重新打开 PDF；若问题持续，请检查应用数据目录的空间和权限。';
+        this.loadError =
+          '无法读取上次的设置，请重新打开 PDF；若问题持续，请检查应用数据目录的空间和权限。';
       }
     }
   }
   beginLaunch() {
     if (this.launch) return this.launch;
     const firstRun = !this.state.hasLaunched && this.state.recents.length === 0;
-    this.launch = this.mutate(state => { state.hasLaunched = true; })
+    this.launch = this.mutate((state) => {
+      state.hasLaunched = true;
+    })
       .then(() => ({ firstRun, ...(this.loadError ? { error: this.loadError } : {}) }))
-      .catch(error => ({ firstRun, error: [this.loadError, error.message].filter(Boolean).join('\n') }));
+      .catch((error) => ({
+        firstRun,
+        error: [this.loadError, error.message].filter(Boolean).join('\n'),
+      }));
     return this.launch;
   }
-  lastPath() { return this.state.recents[0]?.path; }
+  lastPath() {
+    return this.state.recents[0]?.path;
+  }
   recent() {
-    return this.state.recents.map(entry => ({
-      id: entry.id, name: path.basename(entry.path), lastOpened: entry.lastOpened, page: entry.position?.page ?? 1,
+    return this.state.recents.map((entry) => ({
+      id: entry.id,
+      name: path.basename(entry.path),
+      lastOpened: entry.lastOpened,
+      page: entry.position?.page ?? 1,
     }));
   }
   authorized(id) {
     validateId(id);
-    const entry = this.state.recents.find(item => item.id === id);
+    const entry = this.state.recents.find((item) => item.id === id);
     if (!entry) throw new UserError('此文件不在最近打开记录中，请重新选择。');
     return structuredClone(entry);
   }
   mutate(update) {
     if (this.pending >= 32) return Promise.reject(new UserError('保存请求过于频繁，请稍后重试。'));
     this.pending += 1;
-    const next = this.queue.then(async () => {
-      const state = structuredClone(this.state);
-      const result = update(state);
-      try { await this.write(this.filePath, state); }
-      catch (error) {
-        this.warn('Failed to persist settings:', error.message);
-        throw new UserError('无法保存阅读记录，请检查应用数据目录的空间和权限。');
-      }
-      this.state = state;
-      return result;
-    }).finally(() => { this.pending -= 1; });
+    const next = this.queue
+      .then(async () => {
+        const state = structuredClone(this.state);
+        const result = update(state);
+        try {
+          await this.write(this.filePath, state);
+        } catch (error) {
+          this.warn('Failed to persist settings:', error.message);
+          throw new UserError('无法保存阅读记录，请检查应用数据目录的空间和权限。');
+        }
+        this.state = state;
+        return result;
+      })
+      .finally(() => {
+        this.pending -= 1;
+      });
     // One failed write must not poison subsequent updates.
     this.queue = next.catch(() => {});
     return next;
   }
   remember(filePath) {
     validatePath(filePath);
-    return this.mutate(state => {
-      const existing = state.recents.find(entry => entry.path === filePath);
-      const entry = { ...existing, id: existing?.id ?? randomUUID(), path: filePath, lastOpened: Date.now() };
-      state.recents = [entry, ...state.recents.filter(item => item.path !== filePath)].slice(0, MAX_RECENTS);
+    return this.mutate((state) => {
+      const existing = state.recents.find((entry) => entry.path === filePath);
+      const entry = {
+        ...existing,
+        id: existing?.id ?? randomUUID(),
+        path: filePath,
+        lastOpened: Date.now(),
+      };
+      state.recents = [entry, ...state.recents.filter((item) => item.path !== filePath)].slice(
+        0,
+        MAX_RECENTS,
+      );
       return structuredClone(entry);
     });
   }
   savePosition(id, value) {
     validateId(id);
     const position = validatePosition(value);
-    return this.mutate(state => {
-      const entry = state.recents.find(item => item.id === id);
+    return this.mutate((state) => {
+      const entry = state.recents.find((item) => item.id === id);
       if (!entry) throw new UserError('此文件不在最近打开记录中，请重新选择。');
       entry.position = position;
     });
   }
-  flush() { return this.queue; }
+  flush() {
+    return this.queue;
+  }
 }
 module.exports = { sanitizeSettings, atomicWrite, SettingsStore };
