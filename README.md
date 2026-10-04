@@ -2,37 +2,54 @@
 
 **全景 PDF 阅读器 · 把 PDF 铺开读。**
 
-Electron + TypeScript + PDF.js 桌面应用。页面横向连续展开，同屏页数随窗口、页面尺寸和缩放变化；也可切换纵向布局。需求见 [首版需求](docs/requirements.md)。
+Electron + Solid + TypeScript + PDF.js 桌面应用，使用 Vite+ 构建、Effect 管理应用控制流程。页面横向连续展开，同屏页数随窗口、页面尺寸和缩放变化；也可切换纵向布局。需求见 [首版需求](docs/requirements.md)。
 
 ## 开发与运行
 
-使用 **Bun 1.4.0** 管理依赖和运行脚本，**Vitest** 负责单元测试，**Playwright** 负责 Electron 端到端测试；开发环境仍需 **Node.js 24 LTS**，供 Electron／Playwright 等工具使用。桌面应用自身运行于 Electron 自带的 Node.js，不改为 Bun。
+使用 **Bun 1.4.0** 管理依赖和运行脚本，**Vite+ 1.0.0** 提供 Vite、Vitest、Oxlint 和 Oxfmt，**Playwright** 负责 Electron 端到端测试。开发环境使用 **Node.js 24.11.0 或更高的 24 LTS 版本**；桌面应用运行于 Electron 自带的 Node.js。界面使用 **Solid 1.9.15**，应用控制层使用 **Effect 4.0.0**，PDF.js 为 **6.4.299**，Electron 为 **44.5.1**，TypeScript 为 **7.0.2**。Node 类型定义已升级到 **26.6.4**；开发运行时仍使用 Node 24 LTS，新增 Node API 需确认其运行时支持。
 
 ```bash
 bun install --frozen-lockfile
-bun run dev          # Start Vite and Electron; Ctrl+C stops both
-bun run build        # Type-check, bundle UI, and copy offline PDF.js assets
+bun run dev          # Start Vite+ and Electron; Ctrl+C stops both
+bun run check        # Run lint and type checks through Vite+
+bun run build        # Type-check source and tests, bundle UI, copy offline assets
 bun run start        # Start Electron with the production build
-bun run test         # Run Vitest unit tests, excluding Playwright
-bun run test:e2e     # Run Electron E2E tests after bun run build
+bun run test         # Run Vitest unit tests through Vite+, excluding Playwright
+bunx playwright install chromium  # Install the optional browser-preview test runtime
+bun run test:e2e     # Run Electron and browser-preview E2E after bun run build
 bun run dist         # Build and package for the current platform
 ```
 
 依赖版本由 `bun.lock` 锁定，不再维护 npm 锁文件。增加或升级依赖使用 `bun add`／`bun update`，提交对应锁文件变更。`trustedDependencies` 仅允许 Electron 及其 Windows 安装工具运行依赖安装脚本；不全局放开生命周期脚本。
 
-首次安装需下载 Electron。开发服务器仅监听 `127.0.0.1`；页面热更新可用，修改 `electron/` 后需重启 `bun run dev`。`bun run dev:web` 只预览浏览器界面，不具备桌面桥接、系统菜单或桌面最近记录功能。
+首次安装需下载 Electron。开发服务器仅监听 `127.0.0.1`；默认端口被占用时会选择实际可用端口并传给 Electron。Solid 界面支持热更新，修改 `electron/` 后需重启 `bun run dev`。`bun run dev:web` 只预览浏览器界面，不具备桌面桥接、系统菜单或桌面最近记录功能。
+
+`vp dev` 启动内置网页服务器，`vp run dev` 执行桌面启动脚本。完整构建使用 `bun run build` 或 `vp run build`，包含前置类型检查；安装包使用 electron-builder，`vp pack` 用于库构建。全局 `vp` 为可选工具，项目脚本使用已安装的本地版本。
+
+检查、测试与构建配置集中在 `vite.config.ts`。`check.fmt: false` 保留历史文件排版，避免工具链迁移扩大为全库格式化；修改的文件使用 `bunx vp fmt <paths>` 和 `bunx vp fmt --check <paths>`。`bun run check` 保留类型感知 lint 与类型检查。现有 reader/preload 集合快照有 4 条冗余展开建议，保留原实现；安全过滤表达式与 Playwright 必需的空对象参数有定向规则说明。
+
+## 源码结构
+
+- `src/main.tsx`：挂载入口、样式与热更新清理。
+- `src/app.tsx`、`src/components/`：Solid 界面、输入草稿、焦点、搜索和稳定阅读宿主。
+- `src/app-controller.ts`：Effect 应用程序与 Solid 互操作入口，管理文件身份、启动、打开/关闭、位置保存、密码请求和实例 Scope。
+- `src/app-effects.ts`：类型化错误、Promise 适配、严格 FIFO 的有序 Fiber 和外部等待中断。
+- `src/reader.ts`、`src/reader-layout.ts`：原有 PDF.js 阅读器与布局/滚轮算法。
+- `electron/`、`src/contracts.ts`：桌面安全能力、持久化与现有接口。
+
+详见 [架构与生命周期](docs/architecture.md)。
 
 ## 发布版本
 
 `.github/workflows/release.yml` 在推送 `v*` 标签时运行。标签必须与 `package.json` 的版本完全一致，例如版本 `0.1.0` 对应 `v0.1.0`，否则停止发布。
 
-工作流先运行 Vitest、类型检查及构建，macOS 还运行 Playwright Electron 测试，再汇总安装包到 GitHub Release：
+工作流先运行 Vite+ 检查、Vitest、类型检查及构建，macOS 还安装测试浏览器并运行 Playwright Electron／浏览器预览测试，再汇总安装包到 GitHub Release：
 
-| 平台 | 架构 | 安装包 |
-| --- | --- | --- |
-| macOS | Apple Silicon（arm64）、Intel（x64） | DMG、ZIP |
-| Windows | x64 | NSIS EXE |
-| Linux | x64 | AppImage |
+| 平台    | 架构                                 | 安装包   |
+| ------- | ------------------------------------ | -------- |
+| macOS   | Apple Silicon（arm64）、Intel（x64） | DMG、ZIP |
+| Windows | x64                                  | NSIS EXE |
+| Linux   | x64                                  | AppImage |
 
 产物名称包含版本、平台和架构，避免互相覆盖。全部构建与测试成功后才创建 Release，并自动生成发布说明；带 `-` 的版本标签（例如 `v0.2.0-beta.1`）标为预发布。使用 GitHub 自带的 `GITHUB_TOKEN`，只有发布任务有仓库写权限，不需要额外配置令牌。
 
@@ -82,16 +99,20 @@ git push origin v0.1.0
 
 发布目标是 **macOS、Windows、Linux**；这不表示三个平台的安装包都已验证。
 
-本次已在 **macOS / Apple Silicon** 验证：
+本次迁移已在 **macOS / Apple Silicon** 验证：
 
-- **46 项 Vitest 单元测试**：原有 28 项安全／阅读测试，以及 18 项启动恢复、首次启动持久化、窗口动作与 IPC 测试。
-- **8 项 Playwright Electron 端到端测试**：离线阅读、搜索／目录／布局、位置恢复、原生打开竞态、退出保存、首次欢迎、自动续读、明确打开优先、缺失文件恢复、自定义窗口控制及 resize 后页码回退回归。测试 PDF 在本地生成，不使用用户文件。
-- TypeScript 检查与 Vite 生产构建；PDF.js 主包有大于 500 kB 的体积提示，不是构建错误。
-- 开发与生产离线资源；开发启动脚本正确处理占用端口，收到 `Ctrl+C` 后关闭 Electron 和 Vite。
-- Release Action 配置已通过 actionlint；本机 `bun run dist --mac --arm64 --publish never` 成功生成 **未签名** macOS arm64 DMG、ZIP 及应用目录。版本标签检查的通过／拒绝分支已验证；这不等于安装、签名、公证或远端工作流已验证。
-- 本轮检查了 800、1440 像素宽欢迎界面及自定义标题栏阅读页；此前首版另有 800／1440／1920 宽客户区与密码状态的独立视觉审查，结论为 `ship`。
+- 迁移前基线：**46 项单元测试、8 项 Electron E2E**、类型检查和构建通过。
+- Round1 修复后：**112 项单元测试、26 项 Playwright E2E 全部通过**，检查和构建通过。覆盖 FIFO 微任务竞争、退出最终保存顺序、注入 Clock/Logger、终结器失败后的清理及 LF/CRLF 开发编排。
+- ReaderHost HMR 修复新增 2 项回归，关闭期间宿主尺寸修复再新增 1 项，当前 **29 个不同 E2E 已分次验证通过**：完整套件执行结果为 **28 通过、1 跳过**（缺少默认 Chromium），随后使用已有 Chrome 和临时 profile 单独补跑浏览器预览，**1/1 通过**。覆盖应用、入口、阅读宿主和标题栏 HMR、关闭期间宿主尺寸、真实 worker 释放、四种阶段卸载、重复挂载、稳定 DOM、输入草稿与 IME、密码取消和扫描件。沿用已有 **112 项单元测试**通过结果；本轮未重新执行跨平台验收、打包或性能基准。
+- TypeScript 同时检查应用、测试和测量脚本；Vite+ lint/type 检查与生产构建通过，保留 PDF.js 大于 500 kB 的体积提示。
+- 开发/生产的 worker、CMap、字体、WASM、图片均来自本地，外部请求被阻止。端口占用、实际 URL 注入、SIGINT/SIGTERM、Electron 子进程退出和缺失安装清理已检查。
+- Effect 接入前已生成 macOS arm64 **未签名** DMG、ZIP 与应用目录，当时包内 285 个前端/离线资源文件与构建一致。Effect 版本已验证源码构建和 E2E，尚未重新打包。
+- Effect 接入前，800/1440 欢迎页及横向、纵向阅读截图与原始迁移前逐像素相同；本轮继续保留样式和阅读算法，未重复像素比较。
+- Effect 接入前已记录三类合成 PDF 基准，涵盖打开、搜索、滚动/缩放长任务与五轮开关。Effect 版本尚未重跑性能基准；现有结果只描述先前 Solid 版本。
 
-尚未验证 Windows/Linux 原生运行、发行包安装、代码签名、公证、所有操作系统文件关联和真实拖放手势。原生选择器及确认框仍需人工验收。没有对大型扫描件、复杂矢量图做性能基准，不宣称性能达标。纯安全单元测试不依赖 Electron 运行时。
+浏览器预览项需要 Playwright Chromium，或通过 `PANO_PREVIEW_CHROMIUM` 指定已有兼容浏览器；本机使用 Chrome 154 的独立临时 profile。缺失浏览器时该项明确跳过，Electron 项继续运行；CI 安装对应浏览器。
+
+尚待验证 Windows/Linux 原生运行、发行包安装后启动、签名、公证、系统文件关联、真实拖放及原生对话框手势。打包版按设计忽略测试数据目录覆盖，本轮采用包内资源检查，保留个人阅读数据。详细记录包含性能波动和验证边界。
 
 `.github/workflows/ci.yml` 配置三平台 Vitest 与构建，以及 macOS Playwright Electron 测试。远端结果以对应提交的 GitHub Actions 为准，不能将本机通过等同于所有平台通过。详细验收记录见 [验证记录](docs/verification.md)。
 

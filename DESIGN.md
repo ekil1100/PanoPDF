@@ -2,28 +2,28 @@
 name: PanoPDF
 description: 把 PDF 铺开读。
 colors:
-  surface: "#ffffff"
-  surface-subtle: "#f6f7f8"
-  canvas: "#e3e5e8"
-  reader-canvas: "#e7e9ed"
-  text: "#242830"
-  text-muted: "#5b626d"
-  text-disabled: "#747b84"
-  border: "#c9cdd3"
-  border-subtle: "#dfe2e6"
-  accent: "#195db3"
-  accent-hover: "#124a92"
-  accent-pressed: "#0d3975"
-  accent-soft: "#e8f0fc"
-  on-accent: "#ffffff"
-  hover: "#eceef1"
-  pressed: "#dce0e5"
-  error: "#a32929"
-  error-surface: "#fff1ef"
-  backdrop: "rgb(24 30 39 / 36%)"
-  focus: "#2469c0"
-  reader-focus: "#165dca"
-  selection: "#c3d9f6"
+  surface: '#ffffff'
+  surface-subtle: '#f6f7f8'
+  canvas: '#e3e5e8'
+  reader-canvas: '#e7e9ed'
+  text: '#242830'
+  text-muted: '#5b626d'
+  text-disabled: '#747b84'
+  border: '#c9cdd3'
+  border-subtle: '#dfe2e6'
+  accent: '#195db3'
+  accent-hover: '#124a92'
+  accent-pressed: '#0d3975'
+  accent-soft: '#e8f0fc'
+  on-accent: '#ffffff'
+  hover: '#eceef1'
+  pressed: '#dce0e5'
+  error: '#a32929'
+  error-surface: '#fff1ef'
+  backdrop: 'rgb(24 30 39 / 36%)'
+  focus: '#2469c0'
+  reader-focus: '#165dca'
+  selection: '#c3d9f6'
 typography:
   headline:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif'
@@ -67,50 +67,50 @@ spacing:
   space-8: 32px
 components:
   button-primary:
-    backgroundColor: "{colors.accent}"
-    textColor: "{colors.on-accent}"
-    typography: "{typography.body}"
-    rounded: "{rounded.control}"
+    backgroundColor: '{colors.accent}'
+    textColor: '{colors.on-accent}'
+    typography: '{typography.body}'
+    rounded: '{rounded.control}'
     padding: 4px 12px
   button-primary-hover:
-    backgroundColor: "{colors.accent-hover}"
+    backgroundColor: '{colors.accent-hover}'
   button-primary-active:
-    backgroundColor: "{colors.accent-pressed}"
+    backgroundColor: '{colors.accent-pressed}'
   button-secondary:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    typography: "{typography.body}"
-    rounded: "{rounded.control}"
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.text}'
+    typography: '{typography.body}'
+    rounded: '{rounded.control}'
     padding: 4px 12px
   button-icon:
     backgroundColor: transparent
-    textColor: "{colors.text}"
-    rounded: "{rounded.control}"
+    textColor: '{colors.text}'
+    rounded: '{rounded.control}'
     padding: 6px
     width: 32px
     height: 32px
   control-disabled:
-    backgroundColor: "{colors.surface-subtle}"
-    textColor: "{colors.text-disabled}"
+    backgroundColor: '{colors.surface-subtle}'
+    textColor: '{colors.text-disabled}'
   input:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    typography: "{typography.body}"
-    rounded: "{rounded.control}"
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.text}'
+    typography: '{typography.body}'
+    rounded: '{rounded.control}'
     padding: 4px 8px
     height: 32px
   navigation-selected:
-    backgroundColor: "{colors.accent-soft}"
-    textColor: "{colors.accent}"
-    rounded: "{rounded.control}"
+    backgroundColor: '{colors.accent-soft}'
+    textColor: '{colors.accent}'
+    rounded: '{rounded.control}'
     padding: 4px 12px
   password-dialog:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.text}"
-    rounded: "{rounded.dialog}"
+    backgroundColor: '{colors.surface}'
+    textColor: '{colors.text}'
+    rounded: '{rounded.dialog}'
     padding: 24px
   pdf-page:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: '{colors.surface}'
 ---
 
 # Design System: PanoPDF
@@ -124,12 +124,13 @@ PanoPDF 的界面是阅读工具，不是展示页面。用户已批准紧凑工
 默认平坦、紧凑、少装饰。白色工具面与灰色阅读底区分操作和内容，PDF 保留自身排版。系统字体随桌面平台变化，不追求不同操作系统逐像素一致。
 
 **Key Characteristics:**
+
 - 内容优先，工具占据有限空间。
 - 白色工具面、冷中性浅灰底、单一蓝色操作强调。
 - 系统字体、小圆角、明确焦点与错误提示。
 - 桌面窗口可收缩，工具栏按分组换行。
 
-本文件记录已实现系统，不提出新方向。来源为 `tokens.css`、`src/style.css`、`src/reader.css`、`index.html` 与 `src/main.ts`；审查记录及限制见 `docs/verification.md`，阅读窗口的具体策略留在 `docs/reader-surface.md`。基础 token 由本文 frontmatter 记录；阴影、断点与组件样例放在 `.impeccable/design.json`，不加载进应用。
+本文件记录已实现系统，不提出新方向。来源为 `tokens.css`、`src/style.css`、`src/reader.css`、`src/app.tsx` 与 `src/components/`；审查记录及限制见 `docs/verification.md`，阅读窗口的具体策略留在 `docs/reader-surface.md`。基础 token 由本文 frontmatter 记录；阴影、断点与组件样例放在 `.impeccable/design.json`，不加载进应用。
 
 ## Colors
 
@@ -163,13 +164,13 @@ Sidecar 中的八阶色带仅用于设计面板色样预览，按现有颜色合
 
 统一使用 frontmatter 记录的系统字体栈，没有自托管展示字体或独立等宽字体。PDF 内容的字体属于文档本身，不能被外壳排版覆盖。
 
-| 角色 | 用途 |
-| --- | --- |
+| 角色       | 用途                                                |
+| ---------- | --------------------------------------------------- |
 | `headline` | 空态产品名（24px，650，行高 1.3）。不是营销大标题。 |
-| `title` | 密码弹窗、加载与错误标题（16px，600）。 |
-| `body` | 控件和普通说明（13px，400）。 |
-| `label` | 文件名及字段标签（13px，550）。 |
-| `caption` | 底栏、隐私说明、最近文件页码（12px）。 |
+| `title`    | 密码弹窗、加载与错误标题（16px，600）。             |
+| `body`     | 控件和普通说明（13px，400）。                       |
+| `label`    | 文件名及字段标签（13px，550）。                     |
+| `caption`  | 底栏、隐私说明、最近文件页码（12px）。              |
 
 空态标语单独使用 15px；最近打开的小标题为 13px、600。页码、缩放和结果计数使用等宽数字（`tabular-nums`），不引入等宽字体。没有自定义字距。说明文字按容器自然换行；错误说明最多 56ch，长文件名使用省略号。此处不是长文页面，不套用文章正文的固定行长。
 
@@ -244,12 +245,14 @@ Sidecar 的组件样例仅展示已有主要／普通／图标按钮、输入、
 ## Do's and Don'ts
 
 ### Do:
+
 - **Do** 保持系统字体、紧凑控件与分组换行，让 PDF 保持主要空间。
 - **Do** 复用已有颜色、焦点及错误状态；明确区分外壳和 PDF 引擎样式。
 - **Do** 同时记录空态灰底与阅读灰底的真实差异，不把文档当作静默重构。
 - **Do** 保留窄桌面窗口的主要操作，必要时换行并收起导航。
 
 ### Don't:
+
 - **Don't** 加入未经批准的深色主题、展示字体、渐变、玻璃或装饰动画。
 - **Don't** 将工具组变成营销卡片，或用假文档、假指标填充空态。
 - **Don't** 用应用字体覆盖 PDF 内容，或以固定同屏页数替代自由缩放。

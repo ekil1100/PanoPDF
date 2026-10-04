@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict';
-import { test } from 'vitest';
+import { test } from 'vite-plus/test';
 import {
-  anchorPage, clampScale, fitScale, heightScale, isPageWheel, normalizePosition, pageStep,
-  pdfErrorMessage, positiveInteger, safeExternalUrl, wheelPixels,
+  anchorPage,
+  clampScale,
+  fitScale,
+  heightScale,
+  isPageWheel,
+  normalizePosition,
+  pageStep,
+  pdfErrorMessage,
+  positiveInteger,
+  safeExternalUrl,
+  wheelPixels,
 } from '../src/reader-layout.ts';
 import type { ReadingPosition } from '../src/contracts.ts';
 
@@ -20,16 +29,33 @@ test('scale bounds reject non-finite input and support detail-canvas zoom', () =
 
 test('position normalization preserves PDF coordinates and validates persisted settings', () => {
   const position = normalizePosition({
-    page: -1, scale: NaN, layout: 'bad', columns: 0, zoomMode: 'bad', fitPages: 2.8,
-    scrollInput: 'bad', left: -17.5, top: 730.2,
+    page: -1,
+    scale: NaN,
+    layout: 'bad',
+    columns: 0,
+    zoomMode: 'bad',
+    fitPages: 2.8,
+    scrollInput: 'bad',
+    left: -17.5,
+    top: 730.2,
   } as unknown as ReadingPosition);
   assert.deepEqual(position, {
-    page: 1, scale: 1, layout: 'horizontal', columns: 1, zoomMode: 'height', fitPages: 2,
-    scrollInput: 'auto', left: -17.5, top: 730.2,
+    page: 1,
+    scale: 1,
+    layout: 'horizontal',
+    columns: 1,
+    zoomMode: 'height',
+    fitPages: 2,
+    scrollInput: 'auto',
+    left: -17.5,
+    top: 730.2,
   });
   assert.equal(normalizePosition({ ...position, left: NaN }).left, undefined);
   assert.equal(normalizePosition({ ...position, top: Infinity }).top, undefined);
-  assert.equal(normalizePosition({ ...position, zoomMode: 'pages', scrollInput: 'smooth' }).zoomMode, 'pages');
+  assert.equal(
+    normalizePosition({ ...position, zoomMode: 'pages', scrollInput: 'smooth' }).zoomMode,
+    'pages',
+  );
 });
 
 test('anchors prefer the current page over a preceding-row sliver, unless pointing at another page', () => {
@@ -43,7 +69,15 @@ test('anchors prefer the current page over a preceding-row sliver, unless pointi
 test('horizontal fit uses the actual widths, gaps and tallest page', () => {
   assert.equal(fitScale({ width: 1248, height: 832 }, [portrait, portrait], 'horizontal', 99), 1);
   assert.equal(fitScale({ width: 1248, height: 432 }, [portrait, portrait], 'horizontal', 1), 0.5);
-  assert.equal(fitScale({ width: 1848, height: 832 }, [portrait, { width: 1200, height: 500 }], 'horizontal', 2), 1);
+  assert.equal(
+    fitScale(
+      { width: 1848, height: 832 },
+      [portrait, { width: 1200, height: 500 }],
+      'horizontal',
+      2,
+    ),
+    1,
+  );
 });
 
 test('vertical fit accounts for configured columns and rows without changing scale policy', () => {
@@ -82,7 +116,11 @@ test('wheel normalization respects pixel, line and page units', () => {
 });
 
 test('page stepping aligns adjacent pages in a continuous strip', () => {
-  const pages = [{ start: 16, size: 600 }, { start: 632, size: 600 }, { start: 1248, size: 600 }];
+  const pages = [
+    { start: 16, size: 600 },
+    { start: 632, size: 600 },
+    { start: 1248, size: 600 },
+  ];
   assert.equal(pageStep(pages, 0, 632, 1), 616);
   assert.equal(pageStep(pages, 616, 632, 1), 1232);
   assert.equal(pageStep(pages, 1232, 632, -1), 616);
@@ -91,7 +129,10 @@ test('page stepping aligns adjacent pages in a continuous strip', () => {
 });
 
 test('oversized pages pan to their far edge before advancing, and can pan back', () => {
-  const pages = [{ start: 16, size: 2000 }, { start: 2032, size: 600 }];
+  const pages = [
+    { start: 16, size: 2000 },
+    { start: 2032, size: 600 },
+  ];
   assert.equal(pageStep(pages, 0, 800, 1), 680);
   assert.equal(pageStep(pages, 680, 800, 1), 1232);
   assert.equal(pageStep(pages, 1232, 800, 1), 2016);
@@ -102,7 +143,15 @@ test('oversized pages pan to their far edge before advancing, and can pan back',
 test('external links allow only web and mail protocols', () => {
   assert.equal(safeExternalUrl('https://example.com'), 'https://example.com/');
   assert.equal(safeExternalUrl('mailto:reader@example.com'), 'mailto:reader@example.com');
-  for (const url of ['javascript:alert(1)', 'data:text/html,x', 'file:///etc/passwd', 'blob:https://example.com/id', 'ftp://example.com', '../secret', '//example.com']) {
+  for (const url of [
+    'javascript:alert(1)',
+    'data:text/html,x',
+    'file:///etc/passwd',
+    'blob:https://example.com/id',
+    'ftp://example.com',
+    '../secret',
+    '//example.com',
+  ]) {
     assert.equal(safeExternalUrl(url), null);
   }
 });

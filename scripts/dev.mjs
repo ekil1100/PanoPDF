@@ -12,29 +12,41 @@ let stopping;
 async function shutdown(code = 0) {
   if (stopping) return stopping;
   stopping = (async () => {
-    if (child && child.exitCode === null && child.signalCode === null) {
-      const exited = new Promise(resolve => child.once('exit', resolve));
-      child.kill('SIGTERM');
-      const killTimer = setTimeout(() => {
-        if (process.platform === 'win32') {
-          spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
-        } else child.kill('SIGKILL');
-      }, 3000);
-      killTimer.unref();
-      await exited;
-      clearTimeout(killTimer);
-    }
-    await server?.close();
+    const electronClosed = (async () => {
+      if (child && child.exitCode === null && child.signalCode === null) {
+        const exited = new Promise((resolve) => child.once('exit', resolve));
+        child.kill('SIGTERM');
+        const killTimer = setTimeout(() => {
+          if (process.platform === 'win32') {
+            spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+          } else child.kill('SIGKILL');
+        }, 3000);
+        killTimer.unref();
+        await exited;
+        clearTimeout(killTimer);
+      }
+    })();
+    // Begin Vite teardown in this signal task. Its standalone SIGTERM handler
+    // otherwise calls process.exit() while Electron is still shutting down.
+    await Promise.all([electronClosed, server?.close()]);
     process.exitCode = code;
   })();
   return stopping;
 }
-process.once('SIGINT', () => { void shutdown(130); });
-process.once('SIGTERM', () => { void shutdown(143); });
+process.once('SIGINT', () => {
+  void shutdown(130);
+});
+process.once('SIGTERM', () => {
+  void shutdown(143);
+});
 try {
   // Resolve the binary first so a missing Electron install does not leave Vite running.
   const electron = require('electron');
-  server = await createServer({ root, configFile: path.join(root, 'vite.config.ts'), server: { host: '127.0.0.1' } });
+  server = await createServer({
+    root,
+    configFile: path.join(root, 'vite.config.ts'),
+    server: { host: '127.0.0.1' },
+  });
   await server.listen();
   if (stopping) await server.close();
   else {
@@ -45,7 +57,7 @@ try {
     const env = { ...process.env, PANO_DEV_SERVER_URL: url };
     delete env.ELECTRON_RUN_AS_NODE;
     child = spawn(electron, ['.'], { cwd: root, env, stdio: 'inherit' });
-    child.once('error', error => {
+    child.once('error', (error) => {
       console.error('Failed to start Electron:', error.message);
       child = undefined;
       void shutdown(1);

@@ -2,42 +2,79 @@
   "name": "panopdf",
   "version": "0.1.0-beta.1",
   "private": true,
-  "packageManager": "bun@1.4.0",
-  "trustedDependencies": ["electron", "electron-winstaller"],
   "description": "A panoramic desktop PDF reader",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "bun scripts/dev.mjs",
-    "dev:web": "vite --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build",
+    "dev:web": "vp dev --host 127.0.0.1",
+    "check": "vp check",
+    "build": "tsc --noEmit && vp build",
     "start": "electron .",
-    "test": "vitest run",
+    "test": "vp test run",
     "test:e2e": "playwright test",
     "dist": "bun run build && electron-builder"
   },
   "dependencies": {
-    "pdfjs-dist": "6.3.289"
+    "effect": "4.0.0",
+    "pdfjs-dist": "6.4.299",
+    "solid-js": "1.9.15"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
-    "@types/node": "^24.0.0",
-    "electron": "44.4.2",
+    "@types/node": "26.6.4",
+    "electron": "44.5.1",
     "electron-builder": "^26.0.12",
     "pdf-lib": "^1.17.1",
-    "typescript": "^5.9.3",
-    "vite": "^8.3.0",
-    "vitest": "^5.0.1"
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0",
+    "vite-plugin-solid": "2.11.14",
+    "vite-plus": "1.0.0"
   },
+  "overrides": {
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0"
+  },
+  "packageManager": "bun@1.4.0",
   "build": {
     "appId": "com.panopdf.reader",
     "productName": "PanoPDF",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
-    "directories": { "output": "release" },
-    "files": ["dist/**/*", "electron/**/*", "package.json"],
-    "mac": { "target": ["dmg", "zip"], "category": "public.app-category.productivity" },
-    "win": { "target": ["nsis"] },
-    "linux": { "target": ["AppImage"], "category": "Office" },
-    "fileAssociations": [{ "ext": "pdf", "name": "PDF document", "role": "Viewer" }]
-  }
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Office"
+    },
+    "fileAssociations": [
+      {
+        "ext": "pdf",
+        "name": "PDF document",
+        "role": "Viewer"
+      }
+    ]
+  },
+  "trustedDependencies": [
+    "electron",
+    "electron-winstaller"
+  ]
 }

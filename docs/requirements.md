@@ -14,7 +14,7 @@
 - 使用 Electron 构建桌面应用。
 - 使用 PDF.js 解析与渲染 PDF。
 - 支持 macOS、Windows、Linux。
-- 使用 Bun 管理依赖与脚本；单元测试使用 Vitest，端到端测试使用 Playwright。
+- 使用 Bun 管理依赖与脚本；Solid 管理应用界面，Effect 以函数式程序管理应用控制层的异步流程、类型化错误、依赖注入与资源生命周期；Vite+ 提供构建、静态检查与 Vitest；端到端测试使用 Playwright。
 - 引擎选型依据见 [PDF 渲染引擎研究](research/pdf-rendering-engines.md)。
 
 ## 布局与滚动

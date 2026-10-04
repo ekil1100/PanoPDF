@@ -63,9 +63,13 @@ jobs:
         with:
           bun-version: 1.4.0
       - run: bun install --frozen-lockfile
+      - run: bun run check
       - run: bun run test
       - name: Build unsigned installers
         run: bun run dist --${{ matrix.platform }} --${{ matrix.arch }} --publish never
+      - name: Install test browser
+        if: runner.os == 'macOS'
+        run: bunx playwright install chromium
       - name: Test Electron workflows
         if: runner.os == 'macOS'
         run: bun run test:e2e

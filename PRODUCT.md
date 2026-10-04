@@ -10,7 +10,7 @@ web
 
 ## Stack
 
-用户已确认 Electron + PDF.js，并使用 Bun 管理依赖和项目脚本。单元测试使用 Vitest，端到端测试使用 Playwright。首版采用 TypeScript 与 Vite 构建，不引入额外前端框架。Electron 运行时保持不变。
+用户已确认 Electron + PDF.js，并使用 Bun 管理依赖和项目脚本。当前界面由原生 TypeScript/DOM 迁移为 Solid，应用控制层采用 Effect 函数式程序，集中管理异步文件操作、类型化错误、依赖注入和资源生命周期。Vite+ 提供构建、Vitest 与静态检查，Playwright 验证 Electron 和浏览器预览。Electron 运行时、PDF.js 阅读器和现有视觉保持不变。
 
 ## Product Purpose
 

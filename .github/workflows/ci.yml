@@ -24,8 +24,12 @@ jobs:
         with:
           bun-version: 1.4.0
       - run: bun install --frozen-lockfile
+      - run: bun run check
       - run: bun run test
       - run: bun run build
+      - name: Install test browser
+        if: runner.os == 'macOS'
+        run: bunx playwright install chromium
       - name: Test Electron workflows
         if: runner.os == 'macOS'
         run: bun run test:e2e
