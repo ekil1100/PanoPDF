@@ -6,11 +6,11 @@
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
-    "dev": "bun scripts/dev.mjs",
+    "dev": "bun scripts/prepare-electron.mjs && bun scripts/dev.mjs",
     "dev:web": "vp dev --host 127.0.0.1",
     "check": "vp check",
     "build": "tsc --noEmit && vp build",
-    "start": "electron .",
+    "start": "bun scripts/prepare-electron.mjs && electron .",
     "test": "vp test run",
     "test:e2e": "playwright test",
     "dist": "bun run build && electron-builder"
