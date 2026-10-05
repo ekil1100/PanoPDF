@@ -53,7 +53,19 @@ bun run dist         # Build and package for the current platform
 | Windows | x64                                  | NSIS EXE |
 | Linux   | x64                                  | AppImage |
 
-产物名称包含版本、平台和架构，避免互相覆盖。全部构建与测试成功后才创建 Release，并自动生成发布说明；带 `-` 的版本标签（例如 `v0.2.0-beta.1`）标为预发布。使用 GitHub 自带的 `GITHUB_TOKEN`，只有发布任务有仓库写权限，不需要额外配置令牌。
+产物名称包含版本、平台和架构，避免互相覆盖。全部构建与测试成功后才创建 Release，并自动生成发布说明；带 `-` 的版本标签（例如 `v0.2.0-beta.1`）标为预发布。
+
+GitHub Release 的创建使用 GitHub 自带的 `GITHUB_TOKEN`，只有发布任务有仓库写权限。macOS 构建还需要在仓库的 Actions Secrets 中配置以下凭据；这些凭据仅注入 macOS 打包步骤：
+
+| Secret                        | 内容                                                                 |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `CSC_LINK`                    | 包含 Developer ID Application 证书及私钥的 `.p12` 文件的 Base64 内容 |
+| `CSC_KEY_PASSWORD`            | `.p12` 导出密码                                                      |
+| `APPLE_ID`                    | Apple 开发者账号邮箱                                                 |
+| `APPLE_APP_SPECIFIC_PASSWORD` | Apple 账号生成的 App 专用密码                                        |
+| `APPLE_TEAM_ID`               | Apple Developer Team ID                                              |
+
+macOS 打包前检查所有凭据均存在，强制 Developer ID 签名，并启用 Hardened Runtime 和 electron-builder 内置公证。打包后对 `.app` 执行 `codesign`、`stapler` 和 Gatekeeper 验证，任一步失败即停止该任务。arm64 与 x64 共用同一组凭据。证书及密码仅存入 Secrets，不提交到仓库。
 
 先修改并提交 `package.json` 版本及必要的 `bun.lock` 变更，将代码推送后，再发布对应标签：
 
@@ -62,7 +74,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-**当前安装包不包含代码签名或 macOS 公证**，系统可能显示安全警告或拦截；自动打包不代表已通过安装与实机验收。此工作流配置尚需首次标签发布验证，本次没有创建或推送版本标签。
+macOS 签名与公证配置仍需首次标签发布验证；下载后的安装与实机运行需另行验收。Windows 安装包目前未配置代码签名。
 
 ## 使用
 

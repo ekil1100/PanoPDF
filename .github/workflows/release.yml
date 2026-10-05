@@ -52,8 +52,6 @@ jobs:
             platform: linux
             arch: x64
     runs-on: ${{ matrix.os }}
-    env:
-      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -65,7 +63,38 @@ jobs:
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun run test
-      - name: Build unsigned installers
+      - name: Build signed and notarized macOS installers
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required secret: $name"
+              exit 1
+            fi
+          done
+          bun run dist --mac --${{ matrix.arch }} --publish never -c.forceCodeSigning=true
+      - name: Verify macOS signature and notarization ticket
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          apps=(release/mac*/PanoPDF.app)
+          if [[ ${#apps[@]} -ne 1 ]]; then
+            echo "::error::Expected exactly one packaged PanoPDF.app"
+            exit 1
+          fi
+          codesign --verify --deep --strict --verbose=2 "${apps[0]}"
+          xcrun stapler validate "${apps[0]}"
+          spctl --assess --type execute --verbose=2 "${apps[0]}"
+      - name: Build Windows and Linux installers
+        if: runner.os != 'macOS'
         run: bun run dist --${{ matrix.platform }} --${{ matrix.arch }} --publish never
       - name: Install test browser
         if: runner.os == 'macOS'
