@@ -279,7 +279,8 @@ for (const [firstUpdate, followingUpdate] of [
         'aria-label',
         `${label} HMR ${revision}`,
       );
-      await expect(page.locator('.app-header')).toBeVisible();
+      await expect(page.locator('.app-header')).toBeHidden();
+      await expect(page.locator('#emptyState')).toBeVisible();
       await expect(page.locator('#emptyOpen')).toBeEnabled();
       await expect.poll(async () => (await snapshot()).listeners).toEqual([1, 1, 1]);
       const replaced = await snapshot();
