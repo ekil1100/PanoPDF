@@ -144,6 +144,17 @@ h2:not(:where(#viewer *)) {
 }
 .app-header {
   -webkit-app-region: no-drag;
+  pointer-events: none;
+  transition: none;
+}
+.app-header.floating-chrome {
+  opacity: 0;
+}
+.app-header[data-hovered='true'],
+.app-header:focus-within,
+.app-header:has([aria-haspopup][aria-expanded='true']) {
+  opacity: 1;
+  pointer-events: auto;
 }
 .reader-toolbar {
   display: flex;

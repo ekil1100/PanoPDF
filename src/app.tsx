@@ -77,6 +77,8 @@ function Application(props: {
   const [state, setState] = createSignal(initialAppState(!!bridge));
   const [panel, setPanel] = createSignal<Panel | null>(null);
   const [dragging, setDragging] = createSignal(false);
+  const [toolbarHovered, setToolbarHovered] = createSignal(false);
+  let toolbar!: HTMLElement;
   let controller: AppController | undefined;
   let container!: HTMLDivElement;
   let viewer!: HTMLDivElement;
@@ -364,21 +366,6 @@ function Application(props: {
         </Button>
       </Alert>
       <div id="workspace" class="workspace">
-        <header
-          class="app-header floating-chrome"
-          aria-label="阅读工具"
-          hidden={state().phase !== 'ready' && state().phase !== 'opening'}
-        >
-          <ReaderToolbar
-            state={state()}
-            panel={panel()}
-            isMac={isMac}
-            reader={reader}
-            showPanel={showPanel}
-            focusReader={focusReader}
-            status={(message) => controller?.setStatus(message)}
-          />
-        </header>
         <Sidebar
           state={state()}
           panel={panel()}
@@ -396,8 +383,38 @@ function Application(props: {
           id="readingArea"
           class="reading-area"
           aria-label="PDF 阅读区"
+          onPointerMove={(event) => {
+            if (event.buttons !== 0) return;
+            const bounds = toolbar.getBoundingClientRect();
+            setToolbarHovered(
+              event.clientX >= bounds.left &&
+                event.clientX <= bounds.right &&
+                event.clientY >= bounds.top &&
+                event.clientY <= bounds.bottom,
+            );
+          }}
+          onPointerLeave={() => setToolbarHovered(false)}
           aria-busy={state().phase === 'opening' || state().phase === 'closing'}
         >
+          <header
+            ref={(node) => {
+              toolbar = node;
+            }}
+            data-hovered={toolbarHovered()}
+            class="app-header floating-chrome"
+            aria-label="阅读工具"
+            hidden={state().phase !== 'ready' && state().phase !== 'opening'}
+          >
+            <ReaderToolbar
+              state={state()}
+              panel={panel()}
+              isMac={isMac}
+              reader={reader}
+              showPanel={showPanel}
+              focusReader={focusReader}
+              status={(message) => controller?.setStatus(message)}
+            />
+          </header>
           <ReaderHost
             phase={state().phase}
             containerRef={(node) => {

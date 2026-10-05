@@ -167,8 +167,130 @@ test('offline desktop reading, selection, search, outline, layouts, and restorat
   expect(errors).toEqual([]);
 });
 
+for (const width of [800, 849, 850, 851, 1440]) {
+  test(`toolbar leaves sidebar and PDF reachable at ${width}px`, async ({}, testInfo) => {
+    const page = await launch(documentA);
+    await application!.evaluate(
+      ({ BrowserWindow }, width) => BrowserWindow.getAllWindows()[0]!.setContentSize(width, 700),
+      width,
+    );
+    await expectRendered(page);
+    const toolbar = page.locator('.app-header');
+    const hide = async () => {
+      await page.locator('#viewerContainer').focus();
+      await page.mouse.move(width - 40, 500);
+      await expect(toolbar).toHaveCSS('opacity', '0');
+      await expect(toolbar).toHaveCSS('pointer-events', 'none');
+    };
+    const reveal = async () => {
+      const box = (await toolbar.boundingBox())!;
+      await page.mouse.move(box.x + box.width - 20, box.y + 16);
+      await expect(toolbar).toHaveCSS('opacity', '1');
+    };
+    const clickCenter = async (selector: string) => {
+      const target = page.locator(selector);
+      expect(
+        await target.evaluate((node) => {
+          const r = node.getBoundingClientRect();
+          return node.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+        }),
+      ).toBe(true);
+      const r = (await target.boundingBox())!;
+      await page.mouse.click(r.x + r.width / 2, r.y + r.height / 2);
+    };
+    for (const sidebarOpen of [false, true]) {
+      if (sidebarOpen)
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+f' : 'Control+f');
+      await hide();
+      await page.keyboard.press('Shift+Tab');
+      await expect(toolbar).toHaveCSS('opacity', '1');
+      expect(
+        await page
+          .locator('#readerToolbar')
+          .evaluate((node) => node.contains(document.activeElement)),
+      ).toBe(true);
+      await hide();
+      const geometry = await page.evaluate(() => {
+        const header = document.querySelector('.app-header')!.getBoundingClientRect();
+        const reader = document.querySelector('#readingArea')!.getBoundingClientRect();
+        return {
+          fits: header.left >= reader.left && header.right <= reader.right,
+          hiddenHit: !!document
+            .elementFromPoint(header.left + 20, header.top + 20)
+            ?.closest('#viewerContainer'),
+        };
+      });
+      expect(geometry).toEqual({ fits: true, hiddenHit: true });
+      await page.screenshot({ path: testInfo.outputPath(`sidebar-${sidebarOpen}-hidden.png`) });
+      await reveal();
+      await page.screenshot({ path: testInfo.outputPath(`sidebar-${sidebarOpen}-shown.png`) });
+      const layoutBox = (await page.locator('#layoutMode').boundingBox())!;
+      await page.mouse.move(layoutBox.x + 16, layoutBox.y + 16);
+      await expect(toolbar).toHaveCSS('opacity', '1');
+      await page.locator('#layoutMode').click();
+      await expect(page.getByRole('listbox')).toBeVisible();
+      await page.mouse.move(width - 40, 500);
+      await expect(toolbar).toHaveCSS('opacity', '1');
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#layoutMode')).toBeFocused();
+      await page.keyboard.press('Tab');
+      await expect(page.locator('#scrollInput')).toBeFocused();
+      await expect(toolbar).toHaveCSS('opacity', '1');
+      await choose(page, 'layoutMode', 'vertical');
+      await expect(page.locator('#columns')).toBeVisible();
+      await choose(page, 'layoutMode', 'horizontal');
+      if (sidebarOpen) {
+        for (const shown of [false, true]) {
+          await hide();
+          if (shown) await page.locator('#pageNumber').focus();
+          await clickCenter('#outlineTab');
+          await expect(page.locator('#outlineTab')).toHaveAttribute('aria-selected', 'true');
+          if (shown) await page.locator('#pageNumber').focus();
+          await clickCenter('#searchTab');
+          await expect(page.locator('#searchQuery')).toBeVisible();
+          await page.locator('#searchQuery').fill('panorama');
+          await expect(page.locator('#findCount')).toContainText('/ 12 处');
+          if (shown) await page.locator('#pageNumber').focus();
+          await clickCenter('#closePanel');
+          await expect(page.locator('#sidebar')).toBeHidden();
+          await page.keyboard.press(process.platform === 'darwin' ? 'Meta+f' : 'Control+f');
+        }
+        await clickCenter('#outlineTab');
+        await page.getByRole('button', { name: 'Chapter four', exact: true }).click();
+        await expect(page.locator('#pageNumber')).toHaveValue('4');
+        await clickCenter('#closePanel');
+      }
+    }
+    await page.locator('#pageNumber').focus();
+    await jump(page, 1);
+    await hide();
+    const text = page.locator('#viewer .textLayer span').filter({ hasText: 'A panorama' }).first();
+    const textBox = (await text.boundingBox())!;
+    const headerBox = (await toolbar.boundingBox())!;
+    await page.mouse.move(textBox.x + 8, textBox.y + textBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(headerBox.x + 20, headerBox.y + 20, { steps: 5 });
+    await expect(toolbar).toHaveCSS('opacity', '0');
+    expect(await page.evaluate(() => window.getSelection()?.toString().length)).toBeGreaterThan(0);
+    await page.mouse.up();
+    await text.dblclick();
+    expect(await page.evaluate(() => window.getSelection()?.toString().length)).toBeGreaterThan(0);
+    await expect(toolbar).toHaveCSS('opacity', '0');
+    const before = await page.locator('#viewerContainer').evaluate((node) => node.scrollLeft);
+    await page.mouse.wheel(500, 0);
+    await expect
+      .poll(() => page.locator('#viewerContainer').evaluate((node) => node.scrollLeft))
+      .toBeGreaterThan(before);
+  });
+}
+
 test('floating chrome reveals on hover and focus without reducing the reading area', async () => {
   const page = await launch(documentA);
+  await application!.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0]!;
+    window.setPosition(0, 0);
+    window.setContentSize(1000, 700);
+  });
   await expect(page.locator('#pageNumber')).toBeEnabled();
   await page.locator('#viewerContainer').focus();
   await page.mouse.move(400, 300);
@@ -189,7 +311,8 @@ test('floating chrome reveals on hover and focus without reducing the reading ar
   const titlebarHeight = process.platform === 'darwin' ? 32 : 0;
   expect(before!.y).toBe(titlebarHeight);
   expect(before!.height).toBe(viewport.height - titlebarHeight);
-  await toolbar.hover({ position: { x: (await toolbar.boundingBox())!.width - 20, y: 16 } });
+  const toolbarBox = (await toolbar.boundingBox())!;
+  await page.mouse.move(toolbarBox.x + toolbarBox.width - 20, toolbarBox.y + 16);
   await expect(toolbar).toHaveCSS('opacity', '1');
   await page.mouse.move(400, 300);
   await expect(toolbar).toHaveCSS('opacity', '0');
@@ -332,7 +455,9 @@ test('shadcn selects and tabs preserve keyboard navigation, focus and reading st
   await expect(page.locator('#searchQuery')).toHaveValue('panorama');
   const panelId = await page.locator('#searchTab').getAttribute('aria-controls');
   expect(panelId).toBe('searchPanel');
-  await page.locator('#layoutMode').click();
+  await layout.focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('listbox')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('listbox')).toHaveCount(0);
   await expect(page.locator('#sidebar')).toBeVisible();
