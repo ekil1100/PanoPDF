@@ -26,7 +26,7 @@ class StartupSession {
     }
     this.loading = this.load();
     const result = await this.loading;
-    this.loading = Promise.resolve(); // Do not retain the PDF's bytes for the window's lifetime.
+    this.loading = Promise.resolve(); // Do not retain the document's bytes for the window's lifetime.
     this.delivered = true;
     return result;
   }

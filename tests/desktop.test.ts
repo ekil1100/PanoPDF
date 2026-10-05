@@ -1,3 +1,4 @@
+import { Effect } from 'effect';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
@@ -66,6 +67,22 @@ describe('window actions', () => {
 });
 
 describe('startup ordering', () => {
+  it('restores the last EPUB and delivers its saved chapter position', () => {
+    const position = { epub: { chapter: 'OPS/chapter.xhtml', progress: 0.25, offset: 123 } };
+    const open = vi.fn((name: string) => Promise.resolve({ ...pdf(name), position }));
+    const startup = session({ lastPath: '/last.epub', open });
+    return Effect.runPromise(
+      Effect.promise(() => startup.get()).pipe(
+        Effect.tap((result: any) =>
+          Effect.sync(() => {
+            expect(open).toHaveBeenCalledExactlyOnceWith('/last.epub');
+            expect(result.file).toMatchObject({ name: '/last.epub', position });
+          }),
+        ),
+      ),
+    );
+  });
+
   it('reads and returns the initial PDF only once, including concurrent callers', async () => {
     const read = deferred<ReturnType<typeof pdf>>();
     const open = vi.fn(() => read.promise);
@@ -252,14 +269,14 @@ describe('launch persistence', () => {
     await store.load();
     expect(await store.beginLaunch()).toMatchObject({
       firstRun: true,
-      error: expect.stringContaining('重新打开 PDF'),
+      error: expect.stringContaining('重新打开文档'),
     });
     expect(JSON.parse(await fs.readFile(file, 'utf8')).hasLaunched).toBe(true);
   });
 });
 
 describe('main-process integration', () => {
-  async function main() {
+  async function main(argv: string[] = ['electron', '.']) {
     const handlers = new Map<string, (...args: any[]) => Promise<any>>();
     const windows: any[] = [];
     const reads = new Map<string, ReturnType<typeof deferred<Uint8Array>>>();
@@ -320,7 +337,13 @@ describe('main-process integration', () => {
       BrowserWindow: MockWindow,
       ipcMain: { handle: (channel: string, action: any) => handlers.set(channel, action) },
       Menu: { setApplicationMenu: vi.fn(), buildFromTemplate: (value: unknown) => value },
-      dialog: { showErrorBox: vi.fn(), showMessageBox: vi.fn(async () => ({ response: 0 })) },
+      dialog: {
+        showErrorBox: vi.fn(),
+        showMessageBox: vi.fn(() => Promise.resolve({ response: 0 })),
+        showOpenDialog: vi.fn(() =>
+          Promise.resolve({ canceled: false, filePaths: ['/picked.epub'] }),
+        ),
+      },
       protocol: { registerSchemesAsPrivileged() {} },
       shell: {},
       session: {
@@ -352,8 +375,8 @@ describe('main-process integration', () => {
         if (name === './security.cjs')
           return {
             ...security,
-            resolvePdf: async (filePath: string) => filePath,
-            readPdf: async (filePath: string) =>
+            resolveDocument: async (filePath: string) => filePath,
+            readDocument: async (filePath: string) =>
               reads.get(filePath)?.promise ?? new Uint8Array([1]),
           };
         return require(name);
@@ -362,7 +385,7 @@ describe('main-process integration', () => {
       console: { ...console, warn: vi.fn() },
       process: {
         platform: 'linux',
-        argv: ['electron', '.'],
+        argv,
         env: { PANO_DEV_SERVER_URL: 'http://127.0.0.1:5173/' },
       },
     });
@@ -374,6 +397,55 @@ describe('main-process integration', () => {
     const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
     return { app, windows, handlers, reads, call, tick, electron };
   }
+
+  it('opens EPUB from command-line startup, native events, picker and consented drop', () =>
+    Effect.runPromise(
+      Effect.promise(() => main(['electron', '.', '/start.EPUB', '/skip.txt'])).pipe(
+        Effect.flatMap(({ app, windows, call, tick, electron }) =>
+          Effect.promise(() => call('pano:startup')).pipe(
+            Effect.tap((result) => Effect.sync(() => expect(result.file.name).toBe('start.EPUB'))),
+            Effect.flatMap(() => Effect.promise(() => call('pano:listen', 'file', true))),
+            Effect.flatMap(() => Effect.promise(() => call('pano:startup-ready'))),
+            Effect.tap(() =>
+              Effect.sync(() => app.emit('open-file', { preventDefault() {} }, '/native.epub')),
+            ),
+            Effect.flatMap(() => Effect.promise(tick)),
+            Effect.tap(() =>
+              Effect.sync(() =>
+                expect(windows[0].webContents.send).toHaveBeenCalledWith(
+                  'pano:file',
+                  expect.objectContaining({ name: 'native.epub' }),
+                ),
+              ),
+            ),
+            Effect.flatMap(() => Effect.promise(() => call('pano:open'))),
+            Effect.tap((result) =>
+              Effect.sync(() => {
+                expect(result.name).toBe('picked.epub');
+                expect(electron.dialog.showOpenDialog).toHaveBeenCalledWith(
+                  windows[0],
+                  expect.objectContaining({
+                    filters: [{ name: 'PDF/EPUB 文档', extensions: ['pdf', 'epub'] }],
+                  }),
+                );
+              }),
+            ),
+            Effect.flatMap(() =>
+              Effect.promise(() =>
+                expect(call('pano:drop', '/dropped.epub')).rejects.toThrow('已取消'),
+              ),
+            ),
+            Effect.tap(() =>
+              Effect.sync(() =>
+                electron.dialog.showMessageBox.mockResolvedValueOnce({ response: 1 }),
+              ),
+            ),
+            Effect.flatMap(() => Effect.promise(() => call('pano:drop', '/dropped.epub'))),
+            Effect.tap((result) => Effect.sync(() => expect(result.name).toBe('dropped.epub'))),
+          ),
+        ),
+      ),
+    ));
 
   it('creates an isolated window, validates every window IPC and uses normal close', async () => {
     const { windows, call, handlers, electron } = await main();
@@ -476,7 +548,7 @@ describe('sandboxed preload', () => {
             on: (channel: string, callback: (event: unknown, value: unknown) => void) =>
               listeners.set(channel, callback),
           },
-          webUtils: {},
+          webUtils: { getPathForFile: (file: { path: string }) => file.path },
         };
       },
       process: { platform: 'darwin' },
@@ -485,6 +557,78 @@ describe('sandboxed preload', () => {
     });
     return { bridge, invoke, listeners };
   }
+
+  it('passes bounded EPUB positions and local drops through the sandbox bridge', () => {
+    const { bridge, invoke } = preload();
+    const id = randomUUID();
+    const position = {
+      page: 1,
+      scale: 1,
+      layout: 'vertical',
+      columns: 1,
+      zoomMode: 'custom',
+      fitPages: 1,
+      scrollInput: 'auto',
+      epub: { chapter: 'OPS/chapter.xhtml', progress: 0.5 },
+    };
+    return Effect.runPromise(
+      Effect.promise(() => bridge.savePosition(id, position)).pipe(
+        Effect.tap(() =>
+          Effect.sync(() => expect(invoke).toHaveBeenCalledWith('pano:position', id, position)),
+        ),
+        Effect.flatMap(() =>
+          Effect.all(
+            [
+              null,
+              { chapter: 'a', progress: 0, extra: 1 },
+              { chapter: 'a', progress: 0, offset: 0, extra: 1 },
+              ...[-1, 0.5, 33_554_433, NaN, Infinity, -Infinity, '1', null, undefined, {}, []].map(
+                (offset) => ({ chapter: 'a', progress: 0, offset }),
+              ),
+              { chapter: '../a', progress: 0 },
+              { chapter: 'a'.repeat(4097), progress: 0 },
+              { chapter: 'a\n', progress: 0 },
+              { chapter: 'a', progress: Infinity },
+              { chapter: 'a', progress: 2 },
+            ].map((epub) =>
+              Effect.promise(() =>
+                expect(bridge.savePosition(id, { ...position, epub })).rejects.toThrow(
+                  '阅读位置无效',
+                ),
+              ),
+            ),
+          ),
+        ),
+        Effect.tap(() => Effect.sync(() => expect(invoke).toHaveBeenCalledTimes(1))),
+        Effect.flatMap(() =>
+          Effect.all(
+            [0, 'A😀'.length, 33_554_432].map((offset) => {
+              const saved = { ...position, epub: { ...position.epub, offset } };
+              return Effect.promise(() => bridge.savePosition(id, saved)).pipe(
+                Effect.tap(() =>
+                  Effect.sync(() => {
+                    expect(invoke).toHaveBeenLastCalledWith('pano:position', id, saved);
+                    const serialized = JSON.parse(JSON.stringify(invoke.mock.lastCall?.[2]));
+                    expect(serialized).toEqual(saved);
+                  }),
+                ),
+              );
+            }),
+            { concurrency: 1 },
+          ),
+        ),
+        Effect.flatMap(() => Effect.promise(() => bridge.openDropped({ path: '/book.EPUB' }))),
+        Effect.tap(() =>
+          Effect.sync(() => expect(invoke).toHaveBeenLastCalledWith('pano:drop', '/book.EPUB')),
+        ),
+        Effect.flatMap(() =>
+          Effect.promise(() =>
+            expect(bridge.openDropped({ path: '/book.zip' })).rejects.toThrow('PDF/EPUB'),
+          ),
+        ),
+      ),
+    );
+  });
 
   it('acknowledges startup in a later task, not on early subscription or before promise resolution', async () => {
     vi.useFakeTimers();

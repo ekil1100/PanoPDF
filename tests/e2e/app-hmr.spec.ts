@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
 import type { DesktopBridge, ReadingPosition } from '../../src/contracts';
-import type { createReader } from '../../src/reader';
+import type { createReader } from '../../src/document-reader';
 import { readerFixture } from './fixtures';
 
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -156,7 +156,7 @@ for (const [firstUpdate, followingUpdate] of [
       root,
       firstUpdate === 'host' ? 'src/components/reader-host.tsx' : 'src/app.tsx',
     );
-    const label = firstUpdate === 'host' ? 'PDF 页面' : 'PDF 阅读区';
+    const label = firstUpdate === 'host' ? '文档内容' : '文档阅读区';
     const updatedSelector = firstUpdate === 'host' ? '#viewerContainer' : '#readingArea';
     let revision = 0;
     const server = await createServer({
@@ -169,7 +169,7 @@ for (const [firstUpdate, followingUpdate] of [
           enforce: 'pre',
           transform(code, id) {
             if (id.split('?')[0] === path.join(root, 'src/main.tsx')) {
-              return `import { createReader as probeReader } from '/src/reader';
+              return `import { createReader as probeReader } from '/src/document-reader';
               window.__appHmr ??= (${createHmrProbe.toString()})(probeReader);
               window.__appHmr.enter();
               // Tailwind also emits CSS updates; these do not remount the application.
@@ -183,7 +183,7 @@ for (const [firstUpdate, followingUpdate] of [
             }
             // Exercise the actual HMR graph without modifying any source file.
             if (revision && id.split('?')[0] === target) {
-              return code.replace(label, `${label} HMR ${revision}`);
+              return code.replace(label, `${label}-HMR-${revision}`);
             }
           },
         },
@@ -277,7 +277,7 @@ for (const [firstUpdate, followingUpdate] of [
       await probe.evaluate((value) => value.releaseSave());
       await expect(page.locator(updatedSelector)).toHaveAttribute(
         'aria-label',
-        `${label} HMR ${revision}`,
+        `${label}-HMR-${revision}`,
       );
       await expect(page.locator('.app-header')).toBeHidden();
       await expect(page.locator('#emptyState')).toBeVisible();
@@ -293,7 +293,8 @@ for (const [firstUpdate, followingUpdate] of [
       ).toBe(true);
       expect(replaced.readers.at(-1)).toEqual({ destroyCalls: 0, destroyed: false });
       expect(replaced.subscriptions - replaced.unsubscriptions).toBe(3);
-      expect(replaced.observers).toBe(2);
+      // The empty format dispatcher creates its backend observer only when opening a file.
+      expect(replaced.observers).toBe(1);
       expect(replaced.saves.every((entry) => entry.completed)).toBe(true);
       expect(replaced.saves.at(-1)!.position.page).toBe(5);
       // This original handle surviving proves there was no full-page reload.

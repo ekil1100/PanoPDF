@@ -1,0 +1,116 @@
+#viewerContainer[data-format='epub'] {
+  overflow-y: hidden;
+}
+
+#viewerContainer[data-format='epub'][data-layout='horizontal'] #viewer {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-start;
+  width: max-content;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 16px var(--epub-tail, 16px) 16px 16px;
+  gap: 16px;
+}
+
+.epub-section {
+  position: relative;
+  flex: none;
+  height: var(--epub-page-height);
+}
+
+.epub-paper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.epub-page {
+  position: absolute;
+  top: 0;
+  width: var(--epub-page-width);
+  height: var(--epub-page-height);
+  background: white;
+  box-shadow: 0 1px 4px rgb(20 30 45 / 18%);
+}
+
+.epub-page::after {
+  content: attr(data-page-number);
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  width: 100%;
+  color: #747982;
+  text-align: center;
+  font: 11px / 1.4 sans-serif;
+}
+
+.epub-chapter {
+  position: relative;
+  box-sizing: content-box;
+  width: var(--epub-content-width);
+  height: var(--epub-content-height);
+  margin: var(--epub-page-padding);
+  padding: 0;
+  column-width: var(--epub-content-width);
+  column-gap: var(--epub-column-gap);
+  column-fill: auto;
+  color: #20242a;
+  font:
+    calc(18px * var(--epub-scale, 1)) / 1.8 Georgia,
+    'Noto Serif',
+    serif;
+  overflow-wrap: anywhere;
+  orphans: 2;
+  widows: 2;
+}
+
+.epub-chapter > :first-child {
+  margin-top: 0;
+}
+
+.epub-chapter img {
+  display: block;
+  max-width: 100%;
+  max-height: var(--epub-content-height);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  break-inside: avoid;
+}
+
+.epub-chapter table {
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.epub-chapter th,
+.epub-chapter td {
+  border: 1px solid #ccc;
+  padding: 0.25em 0.5em;
+  overflow-wrap: anywhere;
+}
+
+.epub-chapter tr {
+  break-inside: avoid;
+}
+
+.epub-chapter pre {
+  white-space: pre-wrap;
+}
+
+.epub-chapter a {
+  color: #245ea8;
+  text-decoration: underline;
+}
+
+::highlight(epub-matches) {
+  background: #ffe787;
+  color: #20242a;
+}
+
+::highlight(epub-current) {
+  background: #ffad52;
+  color: #20242a;
+}

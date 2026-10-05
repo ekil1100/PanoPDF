@@ -1,3 +1,4 @@
+import { Effect } from 'effect';
 import { test, type TestContext } from 'vite-plus/test';
 import assert from 'node:assert/strict';
 import * as fs from 'node:fs/promises';
@@ -171,21 +172,21 @@ test('PDF reader requires a regular .pdf file, valid magic and bounded size', as
   const directory = await workspace(t);
   const good = path.join(directory, 'valid.PDF');
   await fs.writeFile(good, '%PDF-1.7\n1 0 obj\n<<>>\nendobj\n%%EOF');
-  const canonical = await security.resolvePdf(good);
-  assert.match(Buffer.from(await security.readPdf(canonical)).toString(), /^%PDF-1.7/);
+  const canonical = await security.resolveDocument(good);
+  assert.match(Buffer.from(await security.readDocument(canonical)).toString(), /^%PDF-1.7/);
   assert.equal(security.hasPdfMagic(Buffer.from('not a PDF')), false);
   assert.equal(security.hasPdfMagic(Buffer.from(`${'x'.repeat(1024)}%PDF-1.7`)), false);
   const fake = path.join(directory, 'fake.pdf');
   await fs.writeFile(fake, 'This is not a PDF document');
-  await assert.rejects(security.readPdf(fake), /有效的 PDF/);
+  await assert.rejects(security.readDocument(fake), /有效的 PDF/);
   const folder = path.join(directory, 'folder.pdf');
   await fs.mkdir(folder);
-  await assert.rejects(security.resolvePdf(folder), /普通 PDF/);
+  await assert.rejects(security.resolveDocument(folder), /普通 PDF\/EPUB/);
   const huge = path.join(directory, 'huge.pdf');
   await fs.writeFile(huge, '%PDF-1.7');
-  await fs.truncate(huge, security.MAX_PDF_BYTES + 1);
-  await assert.rejects(security.resolvePdf(huge), /256 MiB/);
-  await assert.rejects(security.readPdf(huge), /256 MiB/);
+  await fs.truncate(huge, security.MAX_DOCUMENT_BYTES + 1);
+  await assert.rejects(security.resolveDocument(huge), /256 MiB/);
+  await assert.rejects(security.readDocument(huge), /256 MiB/);
   for (const value of ['relative.pdf', '/tmp/a.txt', '/tmp/a\nb.pdf', '/tmp/a\0.pdf', {}]) {
     assert.throws(() => security.validatePath(value));
   }
@@ -199,8 +200,8 @@ test.skipIf(process.platform === 'win32')(
     const link = path.join(directory, 'link.pdf');
     await fs.writeFile(target, '%PDF-1.7\n%%EOF');
     await fs.symlink(target, link);
-    assert.equal(await security.resolvePdf(link), await fs.realpath(target));
-    await assert.rejects(security.readPdf(link));
+    assert.equal(await security.resolveDocument(link), await fs.realpath(target));
+    await assert.rejects(security.readDocument(link));
   },
 );
 
@@ -389,3 +390,186 @@ test('the settings write queue is bounded', async (t) => {
   await Promise.all(pending);
   assert.equal(store.recent().length, 20);
 });
+
+test('EPUB positions require exact bounded archive paths, progress and UTF-16 offsets', () => {
+  for (const progress of [0, 0.5, 1]) {
+    const value = { ...position, epub: { chapter: 'OPS/Text/chapter 1.xhtml', progress } };
+    assert.deepEqual(security.validatePosition(value), value);
+    assert.notEqual(security.validatePosition(value).epub, value.epub);
+  }
+  assert.doesNotThrow(() =>
+    security.validatePosition({
+      ...position,
+      epub: { chapter: 'a'.repeat(4096), progress: 0 },
+    }),
+  );
+  for (const offset of [0, 'A😀'.length, 33_554_432]) {
+    const value = { ...position, epub: { chapter: 'OPS/chapter.xhtml', progress: 0.5, offset } };
+    assert.deepEqual(security.validatePosition(JSON.parse(JSON.stringify(value))), value);
+  }
+  const invalid = [
+    null,
+    [],
+    {},
+    ...[-1, 0.5, 33_554_433, NaN, Infinity, -Infinity, '1', null, undefined, {}, []].map(
+      (offset) => ({ chapter: 'a', progress: 0, offset }),
+    ),
+    { chapter: 'a', progress: 0, offset: 0, extra: true },
+    { chapter: 'a' },
+    { progress: 0 },
+    { chapter: 'a', progress: 0, extra: true },
+    ...[
+      '',
+      'a'.repeat(4097),
+      '/a',
+      '../a',
+      'a/../b',
+      'a/./b',
+      'a//b',
+      'a\\b',
+      'a\0b',
+      'a\nb',
+      'a\x7fb',
+      'file:a',
+    ].map((chapter) => ({ chapter, progress: 0 })),
+    ...[-0.1, 1.1, Infinity, NaN, '0', {}].map((progress) => ({ chapter: 'a', progress })),
+  ];
+  for (const epub of invalid) assert.throws(() => security.validatePosition({ ...position, epub }));
+});
+
+test('EPUB reads require matching local ZIP magic and bounded regular files', (t) =>
+  Effect.runPromise(
+    Effect.promise(() => workspace(t)).pipe(
+      Effect.flatMap((directory) => {
+        const bytes = Buffer.from('PK\x03\x04archive payload');
+        const good = path.join(directory, 'book.EPUB');
+        const invalid = [
+          ['pdf.epub', Buffer.from('%PDF-1.7\n%%EOF')],
+          ['zip.pdf', bytes],
+          ['empty.epub', Buffer.from('PK\x05\x06empty ZIP')],
+          ['offset.epub', Buffer.from('xPK\x03\x04archive')],
+          ['short.epub', Buffer.from('PK\x03')],
+        ] as const;
+        return Effect.promise(() => fs.writeFile(good, bytes)).pipe(
+          Effect.flatMap(() => Effect.promise(() => security.resolveDocument(good))),
+          Effect.flatMap((canonical) => Effect.promise(() => security.readDocument(canonical))),
+          Effect.tap((data) =>
+            Effect.sync(() => assert.deepEqual(Buffer.from(data as Uint8Array), bytes)),
+          ),
+          Effect.flatMap(() =>
+            Effect.all(
+              invalid.map(([name, content]) =>
+                Effect.promise(() => fs.writeFile(path.join(directory, name), content)).pipe(
+                  Effect.flatMap(() =>
+                    Effect.promise(() =>
+                      assert.rejects(security.readDocument(path.join(directory, name))),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Effect.flatMap(() =>
+            Effect.promise(() => fs.truncate(good, security.MAX_DOCUMENT_BYTES + 1)),
+          ),
+          Effect.flatMap(() =>
+            Effect.promise(() => assert.rejects(security.readDocument(good), /256 MiB/)),
+          ),
+          Effect.flatMap(() => Effect.promise(() => fs.mkdir(path.join(directory, 'folder.epub')))),
+          Effect.flatMap(() =>
+            Effect.promise(() =>
+              assert.rejects(security.resolveDocument(path.join(directory, 'folder.epub')), /普通/),
+            ),
+          ),
+        );
+      }),
+    ),
+  ));
+
+test('EPUB recents and positions roundtrip while invalid saves preserve committed state', (t) =>
+  Effect.runPromise(
+    Effect.promise(() => workspace(t)).pipe(
+      Effect.flatMap((directory) => {
+        const file = path.join(directory, 'settings.json');
+        const store = new SettingsStore(file);
+        const saved = {
+          ...position,
+          epub: { chapter: 'OPS/chapter.xhtml', progress: 0.75, offset: 33_554_432 },
+        };
+        return Effect.promise(() => store.remember(path.join(directory, 'book.epub'))).pipe(
+          Effect.flatMap((entry: any) =>
+            Effect.promise(() => store.savePosition(entry.id, saved)).pipe(
+              Effect.tap(() =>
+                Effect.sync(() => {
+                  assert.throws(() =>
+                    store.savePosition(entry.id, {
+                      ...saved,
+                      epub: { ...saved.epub, offset: 33_554_433 },
+                    }),
+                  );
+                  assert.deepEqual(store.authorized(entry.id).position, saved);
+                }),
+              ),
+              Effect.flatMap(() => {
+                const restored = new SettingsStore(file);
+                return Effect.promise(() => restored.load()).pipe(
+                  Effect.tap(() =>
+                    Effect.sync(() => {
+                      assert.equal(restored.lastPath(), path.join(directory, 'book.epub'));
+                      assert.deepEqual(restored.authorized(entry.id).position, saved);
+                      assert.equal(restored.recent()[0].name, 'book.epub');
+                      assert.equal('path' in restored.recent()[0], false);
+                      const corrupt = sanitizeSettings({
+                        version: 1,
+                        recents: [
+                          {
+                            ...entry,
+                            position: { ...saved, epub: { chapter: 'a', progress: -1 } },
+                          },
+                        ],
+                      });
+                      assert.equal(corrupt.recents.length, 1);
+                      assert.equal(corrupt.recents[0].position, undefined);
+                    }),
+                  ),
+                );
+              }),
+            ),
+          ),
+        );
+      }),
+    ),
+  ));
+
+test.skipIf(process.platform === 'win32')(
+  'EPUB FIFO reads reject promptly instead of blocking',
+  (t) =>
+    Effect.runPromise(
+      Effect.promise(() => workspace(t)).pipe(
+        Effect.tap((directory) =>
+          Effect.sync(() => {
+            const fifo = path.join(directory, 'book.epub');
+            execFileSync('mkfifo', [fifo]);
+            const child = spawnSync(
+              process.execPath,
+              [
+                '-e',
+                `
+        const { readDocument } = require(${JSON.stringify(require.resolve('../electron/security.cjs'))});
+        readDocument(process.argv[1]).then(
+          () => { process.exitCode = 1; },
+          (error) => console.log(error.message),
+        );
+      `,
+                fifo,
+              ],
+              { timeout: 2000, encoding: 'utf8' },
+            );
+            assert.equal(child.error, undefined, child.error?.message ?? 'FIFO read must finish');
+            assert.equal(child.status, 0, child.stderr);
+            assert.match(child.stdout, /普通 PDF\/EPUB/);
+          }),
+        ),
+      ),
+    ),
+);

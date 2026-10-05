@@ -1,10 +1,11 @@
 'use strict';
 
+const { Effect } = require('effect');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const { constants } = require('node:fs');
 
-const MAX_PDF_BYTES = 256 * 1024 * 1024;
+const MAX_DOCUMENT_BYTES = 256 * 1024 * 1024;
 const MAX_RECENTS = 20;
 const MAX_SETTINGS_BYTES = 1024 * 1024;
 const APP_URL = 'pano://app/index.html';
@@ -35,9 +36,9 @@ function validatePath(value) {
     value.length > 4096 ||
     /[\x00-\x1f\x7f]/.test(value) ||
     !path.isAbsolute(value) ||
-    path.extname(value).toLowerCase() !== '.pdf'
+    !['.pdf', '.epub'].includes(path.extname(value).toLowerCase())
   ) {
-    fail('请选择本地 PDF 文件。');
+    fail('请选择本地 PDF/EPUB 文件。');
   }
   return value;
 }
@@ -56,6 +57,7 @@ function validatePosition(value) {
     'scrollInput',
     'left',
     'top',
+    'epub',
   ];
   if (
     !record(value) ||
@@ -83,9 +85,37 @@ function validatePosition(value) {
     )
       fail();
   }
+  const epub = value.epub === undefined ? undefined : validateEpubPosition(value.epub);
   return Object.fromEntries(
-    keys.filter((key) => value[key] !== undefined).map((key) => [key, value[key]]),
+    keys
+      .filter((key) => value[key] !== undefined)
+      .map((key) => [key, key === 'epub' ? epub : value[key]]),
   );
+}
+function validateEpubPosition(value) {
+  if (
+    !record(value) ||
+    Object.keys(value).some((key) => !['chapter', 'progress', 'offset'].includes(key)) ||
+    !Object.hasOwn(value, 'chapter') ||
+    !Object.hasOwn(value, 'progress') ||
+    typeof value.chapter !== 'string' ||
+    !value.chapter.length ||
+    value.chapter.length > 4096 ||
+    /[\\\x00-\x1f\x7f]/.test(value.chapter) ||
+    /^[a-z][a-z0-9+.-]*:/i.test(value.chapter) ||
+    value.chapter.split('/').some((part) => !part || part === '.' || part === '..') ||
+    !Number.isFinite(value.progress) ||
+    value.progress < 0 ||
+    value.progress > 1 ||
+    (Object.hasOwn(value, 'offset') &&
+      (!Number.isInteger(value.offset) || value.offset < 0 || value.offset > 33_554_432))
+  )
+    fail();
+  return {
+    chapter: value.chapter,
+    progress: value.progress,
+    ...(Object.hasOwn(value, 'offset') ? { offset: value.offset } : {}),
+  };
 }
 function validateExternalUrl(value) {
   if (typeof value !== 'string' || value.length > 2048 || /[\s\x00-\x1f\x7f]/.test(value))
@@ -203,55 +233,103 @@ function isWithin(root, target) {
     !path.isAbsolute(relative)
   );
 }
-async function resolvePdf(value) {
-  validatePath(value);
-  const canonical = await fs.realpath(value);
-  validatePath(canonical);
-  const stat = await fs.stat(canonical);
-  checkPdfStat(stat);
-  return canonical;
+// Preserve filesystem/UserError failures at the Promise boundary used by IPC.
+const attempt = (evaluate) => Effect.try({ try: evaluate, catch: (error) => error });
+const io = (evaluate) => Effect.tryPromise({ try: evaluate, catch: (error) => error });
+function resolveDocument(value) {
+  return Effect.runPromise(
+    attempt(() => validatePath(value)).pipe(
+      Effect.flatMap((filePath) => io(() => fs.realpath(filePath))),
+      Effect.tap((canonical) => attempt(() => validatePath(canonical))),
+      Effect.tap((canonical) =>
+        io(() => fs.stat(canonical)).pipe(
+          Effect.flatMap((stat) => attempt(() => checkDocumentStat(stat, canonical))),
+        ),
+      ),
+    ),
+  );
 }
-function checkPdfStat(stat) {
-  if (!stat.isFile()) fail('只能打开普通 PDF 文件。');
-  if (stat.size < 8 || stat.size > MAX_PDF_BYTES)
-    fail('PDF 文件为空、无效或超过 256 MiB 大小限制。');
+function checkDocumentStat(stat, filePath) {
+  if (!stat.isFile()) fail('只能打开普通 PDF/EPUB 文件。');
+  const minimum = path.extname(filePath).toLowerCase() === '.epub' ? 4 : 8;
+  if (stat.size < minimum || stat.size > MAX_DOCUMENT_BYTES)
+    fail('文档为空、无效或超过 256 MiB 大小限制。');
 }
 function hasPdfMagic(bytes) {
   return /%PDF-(?:1\.[0-7]|2\.0)/.test(Buffer.from(bytes).subarray(0, 1024).toString('latin1'));
 }
-async function readPdf(canonical) {
-  validatePath(canonical);
-  // Nonblocking + no-follow prevents replacement by a FIFO or final-component symlink.
-  const handle = await fs.open(
-    canonical,
-    constants.O_RDONLY | (constants.O_NOFOLLOW || 0) | (constants.O_NONBLOCK || 0),
+function checkDocumentMagic(data, filePath) {
+  const epub = path.extname(filePath).toLowerCase() === '.epub';
+  const valid = epub
+    ? data.length >= 4 && data[0] === 0x50 && data[1] === 0x4b && data[2] === 3 && data[3] === 4
+    : hasPdfMagic(data);
+  if (!valid) fail(`该文件不是有效的 ${epub ? 'EPUB' : 'PDF'} 文件。`);
+}
+function readChunks(handle, data, offset = 0) {
+  if (offset === data.length) return Effect.succeed(data);
+  return io(() =>
+    handle.read(data, offset, Math.min(1024 * 1024, data.length - offset), offset),
+  ).pipe(
+    Effect.flatMap(({ bytesRead }) =>
+      bytesRead
+        ? readChunks(handle, data, offset + bytesRead)
+        : Effect.fail(new UserError('读取时文件发生变化，请重试。')),
+    ),
   );
-  try {
-    const stat = await handle.stat();
-    checkPdfStat(stat);
-    const header = Buffer.alloc(Math.min(1024, stat.size));
-    const { bytesRead } = await handle.read(header, 0, header.length, 0);
-    if (!hasPdfMagic(header.subarray(0, bytesRead))) fail('该文件不是有效的 PDF 文件。');
+}
+function readHeader(handle, canonical, stat) {
+  return attempt(() => {
+    checkDocumentStat(stat, canonical);
+    return Buffer.alloc(Math.min(1024, stat.size));
+  }).pipe(
+    Effect.flatMap((header) =>
+      io(() => handle.read(header, 0, header.length, 0)).pipe(
+        Effect.flatMap(({ bytesRead }) =>
+          attempt(() => checkDocumentMagic(header.subarray(0, bytesRead), canonical)),
+        ),
+      ),
+    ),
+  );
+}
+function verifyRead(handle, canonical, stat, data) {
+  return io(() => handle.stat()).pipe(
+    Effect.flatMap((after) =>
+      attempt(() => {
+        if (after.size !== stat.size || after.mtimeMs !== stat.mtimeMs)
+          fail('读取时文件发生变化，请重试。');
+        checkDocumentMagic(data, canonical);
+      }),
+    ),
+  );
+}
+function readHandle(handle, canonical) {
+  return io(() => handle.stat()).pipe(
+    Effect.tap((stat) => readHeader(handle, canonical, stat)),
+    Effect.bindTo('stat'),
     // Allocate from the checked size, never read an unbounded growing file.
-    const data = Buffer.alloc(stat.size);
-    let offset = 0;
-    while (offset < data.length) {
-      const result = await handle.read(
-        data,
-        offset,
-        Math.min(1024 * 1024, data.length - offset),
-        offset,
-      );
-      if (!result.bytesRead) fail('读取时文件发生变化，请重试。');
-      offset += result.bytesRead;
-    }
-    const after = await handle.stat();
-    if (after.size !== stat.size || after.mtimeMs !== stat.mtimeMs)
-      fail('读取时文件发生变化，请重试。');
-    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-  } finally {
-    await handle.close();
-  }
+    Effect.bind('data', ({ stat }) => readChunks(handle, Buffer.alloc(stat.size))),
+    Effect.tap(({ stat, data }) => verifyRead(handle, canonical, stat, data)),
+    Effect.map(({ data }) => new Uint8Array(data.buffer, data.byteOffset, data.byteLength)),
+  );
+}
+function readDocument(canonical) {
+  return Effect.runPromise(
+    attempt(() => validatePath(canonical)).pipe(
+      Effect.flatMap(() =>
+        Effect.acquireUseRelease(
+          // Nonblocking + no-follow rejects FIFOs and final-component symlink replacement.
+          io(() =>
+            fs.open(
+              canonical,
+              constants.O_RDONLY | (constants.O_NOFOLLOW || 0) | (constants.O_NONBLOCK || 0),
+            ),
+          ),
+          (handle) => readHandle(handle, canonical),
+          (handle) => io(() => handle.close()),
+        ),
+      ),
+    ),
+  );
 }
 function friendlyError(error) {
   if (error instanceof UserError) return error.message;
@@ -262,7 +340,7 @@ function friendlyError(error) {
 
 module.exports = {
   APP_URL,
-  MAX_PDF_BYTES,
+  MAX_DOCUMENT_BYTES,
   MAX_RECENTS,
   MAX_SETTINGS_BYTES,
   UserError,
@@ -281,8 +359,8 @@ module.exports = {
   contentSecurityPolicy,
   assetPath,
   isWithin,
-  resolvePdf,
-  readPdf,
+  resolveDocument,
+  readDocument,
   hasPdfMagic,
   friendlyError,
 };

@@ -81,7 +81,7 @@ export function initialAppState(desktop: boolean): AppState {
     password: null,
     notice: '',
     error: '',
-    status: '打开 PDF 开始阅读',
+    status: '打开 PDF 或 EPUB 开始阅读',
     windowState: { maximized: false, fullscreen: false },
     closingWindow: false,
   };
@@ -90,7 +90,7 @@ export function initialAppState(desktop: boolean): AppState {
 function explainError(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/password|密码/i.test(message)) return '未能解锁此 PDF。请重新打开并输入正确密码。';
-  if (/invalid.*pdf|invalidpdf|格式|损坏/i.test(message))
+  if (/invalid.*pdf|invalidpdf/i.test(message))
     return '此文件不是有效的 PDF，或文件已损坏。请尝试其他文件。';
   if (/ENOENT|not found|不存在|已移动/i.test(message))
     return '文件已移动或删除。请通过“打开”重新选择文件。';
@@ -151,7 +151,7 @@ export const makeAppController = Effect.gen(function* () {
   }
   const inform = (message: string) => Effect.sync(() => notice(message));
   const recoverFile = (error: AppError) =>
-    inform(explainError(errorCause(error), '无法读取文件。请重新选择本地 PDF。'));
+    inform(explainError(errorCause(error), '无法读取文件。请重新选择本地 PDF 或 EPUB。'));
   function enqueue(task: Effect.Effect<void, AppError>) {
     if (!active()) return Effect.void;
     const fiber = operations.submit(
@@ -284,7 +284,7 @@ export const makeAppController = Effect.gen(function* () {
               phase: 'error',
               outline: [],
               status: '文档不可用',
-              error: explainError(openingError, 'PDF 渲染已停止，请重新打开文件后重试。'),
+              error: explainError(openingError, '文档渲染已停止，请重新打开文件后重试。'),
             });
             event({ type: 'reset-document' });
           } else update({ reader: snapshot });
@@ -373,7 +373,7 @@ export const makeAppController = Effect.gen(function* () {
     }).pipe(
       Effect.catchTag('FileAccessError', () =>
         request === recentRequest
-          ? inform('无法读取最近文件列表。仍可通过“打开”选择 PDF。')
+          ? inform('无法读取最近文件列表。仍可通过“打开”选择 PDF 或 EPUB。')
           : Effect.void,
       ),
     );
@@ -389,7 +389,7 @@ export const makeAppController = Effect.gen(function* () {
     if (!active()) return;
     update({ activeFile: null, reader: null, outline: [], error: '' });
   });
-  const closeDocument = (status = '打开 PDF 开始阅读') =>
+  const closeDocument = (status = '打开 PDF 或 EPUB 开始阅读') =>
     Effect.gen(function* () {
       yield* releaseDocument;
       if (!active()) return;
@@ -415,7 +415,13 @@ export const makeAppController = Effect.gen(function* () {
       // The synchronous UI notification makes the host measurable before reader.open.
       if (!active()) return;
       yield* Effect.gen(function* () {
-        yield* readerTask('open', () => reader.open(file.data, restored));
+        yield* readerTask('open', () =>
+          reader.open(
+            file.data,
+            restored,
+            file.format ?? (/\.epub$/i.test(file.name) ? 'epub' : 'pdf'),
+          ),
+        );
         if (!active()) return;
         if (passwordCancelled) return yield* closeDocument('已取消打开');
         // PDF.js may report failure through callbacks and still resolve its open Promise.
@@ -423,7 +429,7 @@ export const makeAppController = Effect.gen(function* () {
           return yield* Effect.fail(
             AppError.ReaderError({
               operation: 'open',
-              cause: openingError || 'PDF did not load',
+              cause: openingError || 'Document did not load',
             }),
           );
         update({ phase: 'ready', firstRun: false, status: '就绪' });
@@ -451,7 +457,7 @@ export const makeAppController = Effect.gen(function* () {
               status: '打开失败',
               error: explainError(
                 error.cause,
-                '无法读取此 PDF。文件可能已损坏或格式不受支持，请尝试其他文件。',
+                '无法读取此文档。文件可能已损坏或格式不受支持，请尝试其他文件。',
               ),
             });
             event({ type: 'focus-error' });
@@ -483,7 +489,10 @@ export const makeAppController = Effect.gen(function* () {
           }).pipe(
             Effect.catch((error) =>
               inform(
-                explainError(errorCause(error), '无法恢复上次的文档，请从“文件”菜单重新打开 PDF。'),
+                explainError(
+                  errorCause(error),
+                  '无法恢复上次的文档，请从“文件”菜单重新打开 PDF 或 EPUB。',
+                ),
               ),
             ),
             Effect.ensuring(
@@ -548,8 +557,14 @@ export const makeAppController = Effect.gen(function* () {
       if (!canPick()) return;
       enqueue(
         Effect.gen(function* () {
-          if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf')
-            return yield* Effect.fail(AppError.InputError({ message: '请选择 PDF 文件。' }));
+          if (
+            (!/\.(pdf|epub)$/i.test(file.name) &&
+              !['application/pdf', 'application/epub+zip'].includes(file.type)) ||
+            file.size > 256 * 1024 * 1024
+          )
+            return yield* Effect.fail(
+              AppError.InputError({ message: '请选择不超过 256 MiB 的 PDF 或 EPUB 文件。' }),
+            );
           if (bridge) {
             const opened = yield* readFile('drop', () => bridge.openDropped(file));
             if (active() && opened) yield* openDocument(opened);
@@ -559,6 +574,8 @@ export const makeAppController = Effect.gen(function* () {
             const opened: OpenedFile = {
               id: `session:${crypto.randomUUID()}`,
               name: file.name,
+              format:
+                /\.epub$/i.test(file.name) || file.type === 'application/epub+zip' ? 'epub' : 'pdf',
               data: new Uint8Array(buffer),
             };
             sessionFiles.set(opened.id, {

@@ -9,7 +9,11 @@ flowchart TB
   App --> Runtime[app-effects.ts 类型化错误与有序 Fiber]
   UI --> Reader[ReaderController 用户阅读命令]
   App --> Reader
-  Reader --> PDF[PDF.js 与独立 worker]
+  Reader --> Dispatch[document-reader.ts 格式选择与资源释放]
+  Dispatch --> PDF[PDF.js 与独立 worker]
+  Dispatch --> EPUB[EPUB 横向分页阅读器]
+  EPUB --> ZIP[zip.js 有界解压]
+  EPUB --> Sanitize[DOMPurify 正文净化]
   Reader --> Layout[reader-layout.ts 纯算法]
   App --> Bridge[DesktopBridge]
   Bridge --> Main[Electron 主进程]
@@ -95,6 +99,18 @@ Solid 管理外壳和宿主显隐；PDF.js 独占 viewer 后代、宿主滚动�
 释放过程在等待打开队列之前启动中止。受控卸载和测试显式等待 Promise；窗口卸载仅触发释放。系统强制结束进程仍可能丢失最后进度。
 
 `app.tsx` 和 `components/reader-host.tsx` 使用 Solid 的文件级热更新跳过标记，将模块替换交给 `main.tsx` 的显式依赖接收回调。入口串行等待旧实例的释放与最终保存，再挂载新实例。Vite 不等待接收回调返回的 Promise，因此替换队列由入口持有；入口自身替换时立即销毁当前 reader，并等待整条队列，已停止的入口跳过后续挂载。应用模块更新会重建界面；桌面端可从最近文件恢复已保存位置。`ReaderHost` 的节点由 reader 持有，其更新沿应用模块传播到入口，完成旧 reader 释放和保存后再替换宿主。其余子组件仍使用 Solid 热替换，标题栏更新保留当前 reader 和阅读位置。
+
+## EPUB 后端
+
+`document-reader.ts` 在打开时按文件格式创建后端，切换前等待旧后端销毁。PDF.js 的原有布局和搜索算法保留；EPUB 在相同宿主中按阅读区域尺寸分页，各章页面横向连续排列，复用 `ReaderController` 的目录、查找、字号和页码导航。`ReaderState.format` 让界面区分 EPUB 字号与 PDF 缩放，EPUB 保留横向滚动模式选择，隐藏 PDF 专用布局与缩放选项。
+
+`epub-archive.ts` 使用 zip.js 检查中央目录的数量、路径、加密标志和解压大小，再用有界 WritableStream 验证实际输出，Effect 负责 ZIP 资源释放及中断。`epub-book.ts` 解析 container、OPF、spine、EPUB 3 nav 或 EPUB 2 NCX；DOMPurify 使用元素/属性白名单，随后将书内 ID、图片和链接转换为阅读器数据。出版物 CSS 和主动内容均不进入活动 DOM，也不放宽 CSP。
+
+`epub-pagination.ts` 负责页面尺寸、原生 CSS 分栏、页框与文字偏移定位。每章保留单份正文 DOM，分栏产生连续页片段，因此跨页选择、搜索和链接保持原生行为。图片解码后计算初始页数，章节页面组成全书页码。窗口和字号变化时按文字锚点重新分页；零尺寸宿主跳过重排。
+
+`epub-reader.ts` 拥有加载 Fiber、章节 DOM、Blob URL、查找高亮、ResizeObserver 和监听器。读取位置为 `epub: { chapter, progress, offset? }`：优先使用章节路径与 UTF-16 文字偏移，纯图片章节或缺少偏移的位置使用章节内分页比例。翻页和用户滚动更新锚点，重排保持原锚点；关闭前同步采集尚未派发事件的横向滚动。目录和查找通过 Range 几何定位页面。关闭中断加载、取消待执行动画帧并释放图片与事件资源。浏览器复用当前会话存储，桌面位置经过 preload 和主进程校验后持久化。
+
+新增代码使用 Effect 链式组合，不增加生成器或 try-catch。格式与资源限制见 [EPUB 阅读范围](../README.md#epub-阅读范围)。
 
 ## 工具链与开发编排
 

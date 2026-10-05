@@ -21,6 +21,7 @@ export function ReaderToolbar(props: {
   const ready = () =>
     props.state.phase === 'ready' && !!props.state.reader?.loaded && !props.state.closingWindow;
   const state = () => props.state.reader;
+  const epub = () => state()?.format === 'epub';
   const zoomMode = () =>
     state()?.zoomMode === 'pages' ? `pages-${state()!.fitPages}` : (state()?.zoomMode ?? 'custom');
   const selectedZoom = () =>
@@ -138,7 +139,7 @@ export function ReaderToolbar(props: {
         <span
           id="pageTotal"
           class="page-total"
-          aria-label={ready() ? `共 ${state()!.pages} 页` : '总页数'}
+          aria-label={ready() ? `共 ${state()!.pages} 页` : '总数'}
         >
           {ready() ? `/ ${state()!.pages}` : '/ —'}
         </span>
@@ -181,7 +182,7 @@ export function ReaderToolbar(props: {
           <Icon name="minus" />
         </Button>
         <Label class="sr-only" for="zoomPercent">
-          缩放百分比
+          {epub() ? '字号百分比' : '缩放百分比'}
         </Label>
         <NumberInput
           id="zoomPercent"
@@ -192,9 +193,15 @@ export function ReaderToolbar(props: {
             zoom = node;
           }}
           value={`${Math.round((state()?.scale ?? 1) * 100)}%`}
-          valid={(number) => number >= 10 && number <= 2500}
+          valid={(number) =>
+            epub() ? number >= 50 && number <= 300 : number >= 10 && number <= 2500
+          }
           commit={(number) => props.reader().setScale(number / 100)}
-          error="缩放比例请输入 10% 到 2500% 之间的数值。"
+          error={
+            epub()
+              ? '字号比例请输入 50% 到 300% 之间的数值。'
+              : '缩放比例请输入 10% 到 2500% 之间的数值。'
+          }
           status={props.status}
           focusReader={props.focusReader}
         />
@@ -215,6 +222,7 @@ export function ReaderToolbar(props: {
         </Button>
         <ReaderSelect
           id="zoomMode"
+          hidden={epub()}
           label="缩放方式"
           class="zoom-select ui-w-[156px]"
           disabled={!ready()}
@@ -245,6 +253,7 @@ export function ReaderToolbar(props: {
       <div class="control-group layout-controls">
         <ReaderSelect
           id="layoutMode"
+          hidden={epub()}
           label="页面布局"
           class="ui-w-28"
           disabled={!ready()}
@@ -256,7 +265,7 @@ export function ReaderToolbar(props: {
           id="columnsControl"
           class="inline-label"
           for="columns"
-          hidden={state()?.layout !== 'vertical'}
+          hidden={epub() || state()?.layout !== 'vertical'}
         >
           每行{' '}
           <NumberInput
@@ -282,7 +291,7 @@ export function ReaderToolbar(props: {
           class="ui-w-32"
           title="横向滚动方式：自动判断鼠标或触控板，也可手动选择"
           disabled={!ready()}
-          hidden={!!state() && state()!.layout !== 'horizontal'}
+          hidden={!epub() && !!state() && state()!.layout !== 'horizontal'}
           value={state()?.scrollInput ?? 'auto'}
           options={scrollModes}
           onChange={(value) => props.reader().setScrollInput(value as ScrollInput)}

@@ -111,7 +111,7 @@ class SettingsStore {
       if (error.code !== 'ENOENT') {
         this.warn('Ignoring unreadable or corrupt settings:', error.message);
         this.loadError =
-          '无法读取上次的设置，请重新打开 PDF；若问题持续，请检查应用数据目录的空间和权限。';
+          '无法读取上次的设置，请重新打开文档；若问题持续，请检查应用数据目录的空间和权限。';
       }
     }
   }

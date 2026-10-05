@@ -1,3 +1,4 @@
+import { Effect } from 'effect';
 import { _electron as electron, chromium, expect, test } from '@playwright/test';
 import type { ElectronApplication, Page } from '@playwright/test';
 import { mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
@@ -6,6 +7,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { epubFixture, epubFiles, zipFixture } from '../epub-fixture';
 import { encryptedFixture, fixturePassword, readerFixture, scannedFixture } from './fixtures';
 
 let directory: string;
@@ -513,7 +515,7 @@ test('welcome screen keeps only the dropzone, shortcut and recent files across l
   await application!.evaluate(({ dialog }, file) => {
     dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [file] });
   }, documentA);
-  await page.getByRole('button', { name: '打开本地 PDF', exact: true }).click();
+  await page.getByRole('button', { name: '打开本地 PDF 或 EPUB', exact: true }).click();
   await expect(page.locator('#pageNumber')).toBeEnabled();
   if (process.platform === 'darwin') {
     await expect(page.locator('.mac-titlebar-title')).toBeVisible();
@@ -1024,7 +1026,116 @@ test('CMap, font, WASM and image assets resolve locally while remote requests ar
   }
 });
 
-test('browser preview repeatedly reopens the same local file without transferring the saved bytes', async ({}, testInfo) => {
+test('EPUB desktop chapters, safe local content, search, persistence and PDF switching', async () => {
+  const ebook = path.join(directory, 'book.epub');
+  await writeFile(ebook, await epubFixture({ unsafe: true }));
+  const page = await launch(ebook);
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await expect(page.locator('.epub-chapter').first()).toContainText('Opening chapter');
+  expect(await page.locator('.epub-page').count()).toBeGreaterThan(2);
+  await expect(page.getByLabel('页码', { exact: true })).toHaveValue('1');
+  await expect(page.locator('#layoutMode')).toBeHidden();
+  await expect(page.locator('#zoomMode')).toBeHidden();
+  expect(await page.evaluate(() => (window as any).epubExecuted)).toBeUndefined();
+  expect(
+    await page
+      .locator(
+        '#viewer script, #viewer iframe, #viewer style, #viewer [onclick], #viewer img[src^="http"]',
+      )
+      .count(),
+  ).toBe(0);
+  await page.getByRole('link', { name: 'Continue reading' }).click();
+  await expect(page.locator('#pageNumber')).toHaveValue('2');
+  await expect(page.locator('.epub-chapter img')).toHaveJSProperty('naturalWidth', 1);
+  await page.locator('#searchToggle').click();
+  await page.locator('#searchQuery').fill('panorama');
+  await expect(page.locator('#findCount')).toHaveText('1 / 2 处');
+  await page.locator('#nextFind').click();
+  await expect(page.locator('#findCount')).toHaveText('2 / 2 处');
+  await expect(page.locator('#pageNumber')).toHaveValue('2');
+  await page.locator('#outlineTab').click();
+  await page.getByRole('button', { name: 'Opening chapter', exact: true }).click();
+  await expect(page.locator('#pageNumber')).toHaveValue('1');
+  await page.locator('#closePanel').click();
+  await jump(page, 2);
+  await page.locator('#zoomPercent').fill('125%');
+  await page.locator('#zoomPercent').press('Enter');
+  await jump(page, 5);
+  await closeDocument(page);
+  const stored = JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8'))
+    .recents[0].position;
+  expect(stored.epub.chapter).toBe('OPS/chapters/two.xhtml');
+  expect(stored.epub.offset).toBeGreaterThan(0);
+  expect(stored.page).toBe(5);
+  await pickDocument(page, documentA);
+  await expectRendered(page);
+  await expect(page.locator('#viewerContainer')).not.toHaveAttribute('data-format', 'epub');
+  expect(
+    await page.locator('#viewer').evaluate((node) => node.style.getPropertyValue('--epub-scale')),
+  ).toBe('');
+  await closeDocument(page);
+  await page.getByRole('button', { name: /book.epub/ }).click();
+  await expect(page.locator('#pageNumber')).toHaveValue('5');
+  await expect(page.locator('#zoomPercent')).toHaveValue('125%');
+  await closeDocument(page);
+  const reopenedPosition = JSON.parse(await readFile(path.join(directory, 'settings.json'), 'utf8'))
+    .recents[0].position;
+  expect(reopenedPosition.epub.offset).toBe(stored.epub.offset);
+  await application!.close();
+  application = undefined;
+  const restarted = await launch();
+  await expect(restarted.locator('#pageNumber')).toHaveValue('5');
+  await expect(restarted.locator('.epub-chapter').last()).toContainText('Second chapter');
+  expect(errors).toEqual([]);
+});
+
+test('EPUB SVG-wrapped raster cover renders and chapter controls stay visible', () => {
+  const ebook = path.join(directory, 'svg-cover.epub');
+  const files = epubFiles();
+  files['OPS/one.xhtml'] =
+    '<html xmlns="http://www.w3.org/1999/xhtml"><body><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1200 1600"><image xlink:href="cover.png" width="1200" height="1600" /></svg></body></html>';
+  return Effect.runPromise(
+    Effect.promise(() => zipFixture(files)).pipe(
+      Effect.flatMap((bytes) => Effect.promise(() => writeFile(ebook, bytes))),
+      Effect.andThen(Effect.promise(() => launch(ebook))),
+      Effect.tap((page) =>
+        Effect.promise(() =>
+          expect(page.locator('.epub-chapter img').first()).toHaveJSProperty('naturalWidth', 1),
+        ),
+      ),
+      Effect.tap((page) => Effect.promise(() => page.locator('#viewerContainer').focus())),
+      Effect.tap((page) => Effect.promise(() => page.mouse.move(400, 300))),
+      Effect.tap((page) =>
+        Effect.promise(() => expect(page.locator('.app-header')).toHaveCSS('opacity', '1')),
+      ),
+      Effect.tap((page) =>
+        Effect.promise(() => page.getByRole('button', { name: '下一页', exact: true }).click()),
+      ),
+      Effect.tap((page) =>
+        Effect.promise(() => expect(page.locator('#pageNumber')).toHaveValue('2')),
+      ),
+    ),
+  );
+});
+
+test('encrypted EPUB reports a clear error and a subsequent EPUB 2 book opens', async () => {
+  const encrypted = path.join(directory, 'encrypted.epub');
+  const files = epubFiles();
+  files['META-INF/encryption.xml'] = '<encryption/>';
+  await writeFile(encrypted, await zipFixture(files));
+  const page = await launch(encrypted);
+  await expect(page.locator('#errorMessage')).toContainText('DRM');
+  await page.locator('#backToEmpty').click();
+  const book = path.join(directory, 'legacy.epub');
+  await writeFile(book, await epubFixture({ version: 2 }));
+  await pickDocument(page, book);
+  await page.locator('#outlineToggle').click();
+  await page.getByRole('button', { name: 'Second chapter', exact: true }).click();
+  await expect(page.locator('#pageNumber')).toHaveValue('2');
+});
+
+test('browser preview repeatedly reopens PDF and EPUB without transferring the saved bytes', async ({}, testInfo) => {
   // An existing Chromium can be supplied; this test never downloads or installs a browser.
   const executablePath = process.env.PANO_PREVIEW_CHROMIUM ?? chromium.executablePath();
   test.skip(
@@ -1086,6 +1197,15 @@ test('browser preview repeatedly reopens the same local file without transferrin
         await expect(page.locator('#pageNumber')).toHaveValue(String(cycle + 2));
       }
     }
+    const ebook = path.join(directory, 'browser.epub');
+    await writeFile(ebook, await epubFixture());
+    await page.locator('#browserFile').setInputFiles(ebook);
+    await expect(page.locator('.epub-chapter').first()).toContainText('Opening chapter');
+    await jump(page, 2);
+    await closeDocument(page);
+    await page.getByRole('button', { name: /browser.epub/ }).click();
+    await expect(page.locator('#pageNumber')).toHaveValue('2');
+    await expect(page.locator('.epub-chapter').last()).toContainText('Second chapter');
     expect(errors).toEqual([]);
   } finally {
     await testInfo.attach('preview-environment', {

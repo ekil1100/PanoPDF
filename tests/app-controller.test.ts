@@ -1095,7 +1095,7 @@ describe('browser files and background requests', () => {
     const h = harness();
     h.app.openLocal(new File(['text'], 'text.txt'));
     await h.app.whenIdle();
-    expect(h.app.getState().notice).toBe('请选择 PDF 文件。');
+    expect(h.app.getState().notice).toBe('请选择不超过 256 MiB 的 PDF 或 EPUB 文件。');
     const bytes = deferred<ArrayBuffer>();
     const local = new File(['PDF'], 'local.pdf');
     vi.spyOn(local, 'arrayBuffer').mockReturnValue(bytes.promise);

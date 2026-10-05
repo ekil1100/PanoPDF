@@ -14,7 +14,7 @@ export function ReaderHost(props: {
       id="viewerContainer"
       ref={props.containerRef}
       tabindex="0"
-      aria-label="PDF 页面"
+      aria-label="文档内容"
       hidden={props.phase === 'empty' || props.phase === 'error'}
       style={{
         visibility: props.phase === 'opening' || props.phase === 'closing' ? 'hidden' : undefined,

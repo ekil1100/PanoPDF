@@ -10,7 +10,7 @@ import {
   type AppEvent,
 } from './app-controller';
 import type { AppCommand, DesktopBridge } from './contracts';
-import { createReader } from './reader';
+import { createReader } from './document-reader';
 import { EmptyState } from './components/empty-state';
 import { Icon } from './components/icon';
 import { Button } from './components/ui/button';
@@ -281,7 +281,7 @@ function Application(props: {
       if (state().password) return;
       const files = [...(event.dataTransfer?.files ?? [])];
       if (files.length !== 1) {
-        notice('请一次拖入一个 PDF 文件。');
+        notice('请一次拖入一个 PDF 或 EPUB 文件。');
         return;
       }
       if (files[0]) controller!.openLocal(files[0]);
@@ -366,6 +366,7 @@ function Application(props: {
       <div id="workspace" class="workspace">
         <header
           class="app-header floating-chrome"
+          data-format={state().reader?.format ?? 'pdf'}
           aria-label="阅读工具"
           hidden={state().phase !== 'ready' && state().phase !== 'opening'}
         >
@@ -395,7 +396,7 @@ function Application(props: {
           }}
           id="readingArea"
           class="reading-area"
-          aria-label="PDF 阅读区"
+          aria-label="文档阅读区"
           aria-busy={state().phase === 'opening' || state().phase === 'closing'}
         >
           <ReaderHost
@@ -425,7 +426,7 @@ function Application(props: {
             aria-live="polite"
             hidden={state().phase !== 'opening' && state().phase !== 'closing'}
           >
-            <h2 id="loadingTitle">正在打开 PDF…</h2>
+            <h2 id="loadingTitle">正在打开文档…</h2>
             <p id="loadingFilename" class="muted">
               {state().activeFile?.name ?? ''}
             </p>
@@ -438,7 +439,7 @@ function Application(props: {
             aria-labelledby="errorTitle"
             hidden={state().phase !== 'error'}
           >
-            <h2 id="errorTitle">无法打开 PDF</h2>
+            <h2 id="errorTitle">无法打开文档</h2>
             <Alert id="errorMessage" variant="destructive" class="ui-w-auto ui-max-w-[56ch]">
               <AlertDescription>{state().error}</AlertDescription>
             </Alert>
@@ -451,7 +452,7 @@ function Application(props: {
                 type="button"
                 onClick={openPicker}
               >
-                打开其他 PDF
+                打开其他文档
               </Button>
               <Button id="backToEmpty" variant="outline" type="button" onClick={closeDocument}>
                 返回
@@ -463,7 +464,7 @@ function Application(props: {
             class="drop-overlay"
             hidden={!dragging() || !!state().password || state().phase === 'empty'}
           >
-            <p>松开以打开 PDF</p>
+            <p>松开以打开 PDF 或 EPUB</p>
           </div>
         </main>
       </div>
@@ -489,9 +490,9 @@ function Application(props: {
         id="browserFile"
         class="sr-only"
         type="file"
-        accept=".pdf,application/pdf"
+        accept=".pdf,.epub,application/pdf,application/epub+zip"
         tabindex="-1"
-        aria-label="选择本地 PDF"
+        aria-label="选择本地 PDF 或 EPUB"
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
           event.currentTarget.value = '';

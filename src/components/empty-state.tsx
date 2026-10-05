@@ -36,7 +36,7 @@ export function EmptyState(props: {
           class="welcome-dropzone ui-min-h-[152px] ui-border-0 data-[dragging=true]:ui-bg-primary/5"
           data-dragging={props.dragging ? 'true' : undefined}
           role="group"
-          aria-label="拖入 PDF 文件或使用按钮打开"
+          aria-label="拖入 PDF 或 EPUB 文件或使用按钮打开"
         >
           <Button
             ref={props.openRef}
@@ -44,13 +44,13 @@ export function EmptyState(props: {
             class="primary-button"
             type="button"
             data-icon="open"
-            aria-label="打开本地 PDF"
+            aria-label="打开本地 PDF 或 EPUB"
             aria-keyshortcuts={props.isMac ? 'Meta+O' : 'Control+O'}
             disabled={props.state.startupPending || props.state.closingWindow}
             onClick={props.open}
           >
             <Icon name="open" />
-            <span>打开本地 PDF</span>
+            <span>打开本地 PDF 或 EPUB</span>
             <span id="openShortcut" class="open-shortcut" aria-hidden="true">
               <For each={shortcutKeys()}>
                 {(key) => <Kbd class="ui-bg-white/10 ui-text-primary-foreground">{key}</Kbd>}
@@ -78,7 +78,9 @@ export function EmptyState(props: {
                   >
                     <Icon name="document" />
                     <span class="recent-name">{file.name}</span>
-                    <span class="recent-page">第 {file.page} 页</span>
+                    <span class="recent-page">
+                      第 {file.page} {/\.epub$/i.test(file.name) ? '章' : '页'}
+                    </span>
                   </Button>
                 </li>
               )}

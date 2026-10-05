@@ -1,3 +1,4 @@
+export type DocumentFormat = 'pdf' | 'epub';
 export type LayoutMode = 'horizontal' | 'vertical';
 export type ScrollInput = 'auto' | 'page' | 'smooth';
 export type ZoomMode = 'custom' | 'height' | 'pages';
@@ -10,6 +11,13 @@ export interface ReadingPosition {
   zoomMode: ZoomMode;
   fitPages: number;
   scrollInput: ScrollInput;
+  epub?: {
+    chapter: string;
+    // Fallback for image-only chapters and positions saved without an offset.
+    progress: number;
+    // Chapter text UTF-16 character offset, an integer from 0 through 33_554_432.
+    offset?: number;
+  };
   // PDF coordinates anchor the same content across zoom and layout changes.
   left?: number;
   top?: number;
@@ -18,6 +26,7 @@ export interface ReadingPosition {
 export interface OpenedFile {
   id: string;
   name: string;
+  format?: DocumentFormat;
   data: Uint8Array;
   position?: ReadingPosition;
 }
@@ -77,6 +86,7 @@ export interface OutlineEntry {
 }
 
 export interface ReaderState {
+  format?: DocumentFormat;
   loaded: boolean;
   page: number;
   pages: number;
@@ -107,7 +117,7 @@ export interface ReaderCallbacks {
 }
 
 export interface ReaderController {
-  open(data: Uint8Array, position?: ReadingPosition): Promise<void>;
+  open(data: Uint8Array, position?: ReadingPosition, format?: DocumentFormat): Promise<void>;
   close(): Promise<void>;
   destroy(): Promise<void>;
   setLayout(mode: LayoutMode): void;

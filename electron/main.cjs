@@ -1,6 +1,7 @@
 'use strict';
 
 const { app, BrowserWindow, dialog, ipcMain, Menu, protocol, shell } = require('electron');
+const { Effect } = require('effect');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const {
@@ -16,8 +17,8 @@ const {
   contentSecurityPolicy,
   assetPath,
   isWithin,
-  resolvePdf,
-  readPdf,
+  resolveDocument,
+  readDocument,
   friendlyError,
 } = require('./security.cjs');
 const { SettingsStore } = require('./settings.cjs');
@@ -78,7 +79,7 @@ app.on('open-file', (event, filePath) => {
 });
 function commandLineFiles(argv) {
   for (const arg of argv.slice(app.isPackaged ? 1 : 2)) {
-    if (!arg.startsWith('-') && path.extname(arg).toLowerCase() === '.pdf')
+    if (!arg.startsWith('-') && ['.pdf', '.epub'].includes(path.extname(arg).toLowerCase()))
       queueNativePath(path.resolve(arg));
   }
 }
@@ -124,16 +125,21 @@ function reopenWindow() {
     dialog.showErrorBox('无法打开窗口', '窗口加载失败，请退出后重新启动 PanoPDF。');
   });
 }
-async function openedFile(filePath) {
-  const canonical = await resolvePdf(filePath);
-  const data = await readPdf(canonical);
-  const entry = await settings.remember(canonical);
-  return {
-    id: entry.id,
-    name: path.basename(canonical),
-    data,
-    ...(entry.position ? { position: entry.position } : {}),
-  };
+const io = (evaluate) => Effect.tryPromise({ try: evaluate, catch: (error) => error });
+function openedFile(filePath) {
+  return Effect.runPromise(
+    io(() => resolveDocument(filePath)).pipe(
+      Effect.bindTo('canonical'),
+      Effect.bind('data', ({ canonical }) => io(() => readDocument(canonical))),
+      Effect.bind('entry', ({ canonical }) => io(() => settings.remember(canonical))),
+      Effect.map(({ canonical, data, entry }) => ({
+        id: entry.id,
+        name: path.basename(canonical),
+        data,
+        ...(entry.position ? { position: entry.position } : {}),
+      })),
+    ),
+  );
 }
 async function exclusiveOpen(action) {
   if (opening || quitting) throw new UserError('另一个文件正在打开，请稍后重试。');
@@ -189,7 +195,7 @@ async function drainNativePaths() {
         }
         await dialog.showMessageBox(target, {
           type: 'error',
-          title: '无法打开 PDF',
+          title: '无法打开文档',
           message: friendlyError(error),
           buttons: ['好'],
         });
@@ -258,38 +264,55 @@ function installIpc() {
     else target.close(); // Normal close preserves beforeunload and its position save.
   });
   handle('pano:open', 0, () =>
-    exclusiveOpen(async () => {
-      const result = await dialog.showOpenDialog(window, {
-        title: '打开 PDF',
-        buttonLabel: '打开',
-        filters: [{ name: 'PDF 文档', extensions: ['pdf'] }],
-        properties: ['openFile'],
-      });
-      if (result.canceled || !result.filePaths[0]) return null;
-      return openedFile(result.filePaths[0]);
-    }),
+    exclusiveOpen(() =>
+      Effect.runPromise(
+        io(() =>
+          dialog.showOpenDialog(window, {
+            title: '打开 PDF/EPUB',
+            buttonLabel: '打开',
+            filters: [{ name: 'PDF/EPUB 文档', extensions: ['pdf', 'epub'] }],
+            properties: ['openFile'],
+          }),
+        ).pipe(
+          Effect.flatMap((result) =>
+            result.canceled || !result.filePaths[0]
+              ? Effect.succeed(null)
+              : io(() => openedFile(result.filePaths[0])),
+          ),
+        ),
+      ),
+    ),
   );
   handle('pano:recent-open', 1, (id) =>
     exclusiveOpen(() => openedFile(settings.authorized(id).path)),
   );
   handle('pano:drop', 1, (filePath) =>
-    exclusiveOpen(async () => {
-      // A native File is useful evidence, not proof of a user gesture. Always obtain
-      // main-process consent before reading or authorizing a renderer-supplied path.
-      validatePath(filePath);
-      const result = await dialog.showMessageBox(window, {
-        type: 'question',
-        title: '打开拖入的 PDF',
-        message: '允许 PanoPDF 读取此文件吗？',
-        detail: `请核对完整文件路径；仅在这是您要打开的文件时允许（若为符号链接，将读取它指向的 PDF）。\n\n${filePath}`,
-        buttons: ['取消', '允许打开'],
-        defaultId: 0,
-        cancelId: 0,
-        noLink: true,
-      });
-      if (result.response !== 1) throw new UserError('已取消打开文件。');
-      return openedFile(filePath);
-    }),
+    exclusiveOpen(() =>
+      Effect.runPromise(
+        Effect.try({ try: () => validatePath(filePath), catch: (error) => error }).pipe(
+          // Native File evidence still requires main-process consent for its path.
+          Effect.flatMap(() =>
+            io(() =>
+              dialog.showMessageBox(window, {
+                type: 'question',
+                title: '打开拖入的文档',
+                message: '允许 PanoPDF 读取此文件吗？',
+                detail: `请核对完整文件路径；仅在这是您要打开的文件时允许（若为符号链接，将读取它指向的文档）。\n\n${filePath}`,
+                buttons: ['取消', '允许打开'],
+                defaultId: 0,
+                cancelId: 0,
+                noLink: true,
+              }),
+            ),
+          ),
+          Effect.flatMap((result) =>
+            result.response === 1
+              ? io(() => openedFile(filePath))
+              : Effect.fail(new UserError('已取消打开文件。')),
+          ),
+        ),
+      ),
+    ),
   );
   handle('pano:recent', 0, () => settings.recent());
   handle('pano:position', 2, (id, position) => settings.savePosition(id, position));
@@ -477,7 +500,7 @@ function installMenu() {
       {
         label: '文件',
         submenu: [
-          item('打开 PDF…', 'CmdOrCtrl+O', 'open'),
+          item('打开 PDF/EPUB…', 'CmdOrCtrl+O', 'open'),
           item('关闭文档', 'CmdOrCtrl+W', 'close-document'),
           { type: 'separator' },
           ...(mac

@@ -137,6 +137,7 @@ h2:not(:where(#viewer *)) {
   opacity: 0;
   transition: opacity 120ms ease;
 }
+.app-header[data-format='epub'],
 .floating-chrome:hover,
 .floating-chrome:focus-within,
 .app-header:has([aria-haspopup][aria-expanded='true']) {

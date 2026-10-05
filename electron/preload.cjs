@@ -32,6 +32,7 @@ function position(value) {
     'scrollInput',
     'left',
     'top',
+    'epub',
   ];
   if (
     !value ||
@@ -46,6 +47,10 @@ function position(value) {
   for (const key of keys) {
     const v = value[key];
     if (v === undefined) continue;
+    if (key === 'epub') {
+      result[key] = epubPosition(v);
+      continue;
+    }
     if (
       !((typeof v === 'number' && Number.isFinite(v)) || (typeof v === 'string' && v.length <= 16))
     ) {
@@ -54,6 +59,33 @@ function position(value) {
     result[key] = v;
   }
   return result;
+}
+function epubPosition(value) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    Object.keys(value).some((key) => !['chapter', 'progress', 'offset'].includes(key)) ||
+    !Object.hasOwn(value, 'chapter') ||
+    !Object.hasOwn(value, 'progress') ||
+    typeof value.chapter !== 'string' ||
+    !value.chapter.length ||
+    value.chapter.length > 4096 ||
+    /[\\\x00-\x1f\x7f]/.test(value.chapter) ||
+    /^[a-z][a-z0-9+.-]*:/i.test(value.chapter) ||
+    value.chapter.split('/').some((part) => !part || part === '.' || part === '..') ||
+    !Number.isFinite(value.progress) ||
+    value.progress < 0 ||
+    value.progress > 1 ||
+    (Object.hasOwn(value, 'offset') &&
+      (!Number.isInteger(value.offset) || value.offset < 0 || value.offset > 33_554_432))
+  )
+    throw new Error('阅读位置无效。');
+  return {
+    chapter: value.chapter,
+    progress: value.progress,
+    ...(Object.hasOwn(value, 'offset') ? { offset: value.offset } : {}),
+  };
 }
 async function invoke(channel, ...args) {
   try {
@@ -128,15 +160,15 @@ contextBridge.exposeInMainWorld('panopdf', {
     try {
       filePath = webUtils.getPathForFile(file);
     } catch {
-      throw new Error('请拖入本地 PDF 文件。');
+      throw new Error('请拖入本地 PDF/EPUB 文件。');
     }
     if (
       !filePath ||
       filePath.length > 4096 ||
       /[\x00-\x1f\x7f]/.test(filePath) ||
-      !/\.pdf$/i.test(filePath)
+      !/\.(pdf|epub)$/i.test(filePath)
     ) {
-      throw new Error('请拖入本地 PDF 文件。');
+      throw new Error('请拖入本地 PDF/EPUB 文件。');
     }
     return invoke('pano:drop', filePath);
   },
