@@ -29,12 +29,12 @@ export const DialogContent = <T extends ValidComponent = 'div'>(
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay
-        class={cn('ui-base', 'ui-fixed ui-inset-0 ui-z-50 ui-bg-black/40')}
+        class={cn('ui-base', 'ui:fixed ui:inset-0 ui:z-50 ui:bg-black/40')}
       />
       <DialogPrimitive.Content
         class={cn(
           'ui-base',
-          'ui-fixed ui-left-[50%] ui-top-[50%] ui-z-50 ui-grid ui-w-full ui-max-w-[min(32rem,calc(100vw-2rem))] ui-translate-x-[-50%] ui-translate-y-[-50%] ui-gap-3 ui-rounded-lg ui-border ui-border-border ui-bg-background ui-text-foreground ui-p-4 ui-shadow-lg',
+          'ui:fixed ui:left-[50%] ui:top-[50%] ui:z-50 ui:grid ui:w-full ui:max-w-[min(32rem,calc(100vw-2rem))] ui:translate-x-[-50%] ui:translate-y-[-50%] ui:gap-3 ui:rounded-lg ui:border ui:border-border ui:bg-background ui:text-foreground ui:p-4 ui:shadow-lg',
           local.class,
         )}
         {...rest}
@@ -42,9 +42,9 @@ export const DialogContent = <T extends ValidComponent = 'div'>(
         {local.children}
         <DialogPrimitive.CloseButton
           aria-label="关闭对话框"
-          class="ui-base ui-border-0 ui-bg-transparent ui-p-0 ui-text-foreground ui-absolute ui-right-4 ui-top-4 ui-rounded-sm ui-opacity-70 ui-ring-offset-background ui-transition-[opacity,box-shadow] hover:ui-opacity-100 focus:ui-outline-none focus:ui-ring-[1.5px] focus:ui-ring-ring focus:ui-ring-offset-2 disabled:ui-pointer-events-none"
+          class="ui-base ui:border-0 ui:bg-transparent ui:p-0 ui:text-foreground ui:absolute ui:right-4 ui:top-4 ui:rounded-sm ui:opacity-70 ui:ring-offset-background ui:transition-[opacity,box-shadow] ui:hover:opacity-100 ui:focus:outline-hidden ui:focus:ring-[1.5px] ui:focus:ring-ring ui:focus:ring-offset-2 ui:disabled:pointer-events-none"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="ui-h-4 ui-w-4">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="ui:h-4 ui:w-4">
             <path
               fill="none"
               stroke="currentColor"
@@ -72,7 +72,7 @@ export const DialogTitle = <T extends ValidComponent = 'h2'>(
 
   return (
     <DialogPrimitive.Title
-      class={cn('ui-base', 'ui-text-lg ui-font-semibold ui-text-foreground', local.class)}
+      class={cn('ui-base', 'ui:text-lg ui:font-semibold ui:text-foreground', local.class)}
       {...rest}
     />
   );
@@ -89,7 +89,7 @@ export const DialogDescription = <T extends ValidComponent = 'p'>(
 
   return (
     <DialogPrimitive.Description
-      class={cn('ui-base', 'ui-text-sm ui-text-muted-foreground', local.class)}
+      class={cn('ui-base', 'ui:text-sm ui:text-muted-foreground', local.class)}
       {...rest}
     />
   );
@@ -102,7 +102,7 @@ export const DialogHeader = (props: ComponentProps<'div'>) => {
     <div
       class={cn(
         'ui-base',
-        'ui-flex ui-flex-col ui-space-y-2 ui-text-center sm:ui-text-left',
+        'ui:flex ui:flex-col ui:space-y-2 ui:text-center ui:sm:text-left',
         local.class,
       )}
       {...rest}
@@ -117,7 +117,7 @@ export const DialogFooter = (props: ComponentProps<'div'>) => {
     <div
       class={cn(
         'ui-base',
-        'ui-flex ui-flex-col-reverse sm:ui-flex-row sm:ui-justify-end sm:ui-space-x-2',
+        'ui:flex ui:flex-col-reverse ui:sm:flex-row ui:sm:justify-end ui:sm:space-x-2',
         local.class,
       )}
       {...rest}

@@ -8,7 +8,7 @@ export function Kbd(props: JSX.HTMLAttributes<HTMLElement>) {
     <kbd
       data-slot="kbd"
       class={cn(
-        'ui-base ui-inline-flex ui-h-5 ui-min-w-5 ui-items-center ui-justify-center ui-rounded ui-bg-muted ui-px-1 ui-font-sans ui-text-xs ui-font-medium ui-text-muted-foreground ui-whitespace-nowrap',
+        'ui-base ui:inline-flex ui:h-5 ui:min-w-5 ui:items-center ui:justify-center ui:rounded-[0.25rem] ui:bg-muted ui:px-1 ui:font-sans ui:text-xs ui:font-medium ui:text-muted-foreground ui:whitespace-nowrap',
         local.class,
       )}
       {...rest}

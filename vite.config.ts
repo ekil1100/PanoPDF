@@ -1,7 +1,6 @@
 import { defineConfig, type Plugin } from 'vite-plus';
 import solid from 'vite-plugin-solid';
-import tailwindcss from 'tailwindcss';
-import autoprefixer from 'autoprefixer';
+import tailwindcss from '@tailwindcss/vite';
 import { createRequire } from 'node:module';
 import { createReadStream } from 'node:fs';
 import { cp, mkdir, realpath, stat } from 'node:fs/promises';
@@ -133,15 +132,7 @@ export default defineConfig({
   },
   root: projectRoot,
   base: './',
-  plugins: [solid(), pdfResources()],
-  css: {
-    postcss: {
-      plugins: [
-        tailwindcss({ config: path.join(projectRoot, 'tailwind.config.ts') }),
-        autoprefixer(),
-      ],
-    },
-  },
+  plugins: [tailwindcss(), solid(), pdfResources()],
   server: { host: '127.0.0.1', fs: { strict: true } },
   preview: { host: '127.0.0.1', headers: { 'Content-Security-Policy': contentSecurityPolicy() } },
   build: { target: 'es2022', outDir: 'dist', emptyOutDir: true },

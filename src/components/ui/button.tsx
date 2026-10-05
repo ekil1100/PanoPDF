@@ -10,25 +10,25 @@ import type { ValidComponent } from 'solid-js';
 import { splitProps } from 'solid-js';
 
 export const buttonVariants = cva(
-  'ui-base ui-border ui-border-transparent ui-bg-transparent ui-text-foreground ui-gap-1.5 ui-whitespace-nowrap ui-inline-flex ui-items-center ui-justify-center ui-rounded-md ui-text-sm ui-font-medium ui-transition-[color,background-color,box-shadow] focus-visible:ui-outline-none focus-visible:ui-ring-[1.5px] focus-visible:ui-ring-ring disabled:ui-pointer-events-none disabled:ui-opacity-50',
+  'ui-base ui:border ui:border-transparent ui:bg-transparent ui:text-foreground ui:gap-1.5 ui:whitespace-nowrap ui:inline-flex ui:items-center ui:justify-center ui:rounded-md ui:text-sm ui:font-medium ui:transition-[color,background-color,box-shadow] ui:focus-visible:outline-hidden ui:focus-visible:ring-[1.5px] ui:focus-visible:ring-ring ui:disabled:pointer-events-none ui:disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'ui-bg-primary ui-text-primary-foreground ui-shadow hover:ui-bg-primary/90',
+        default: 'ui:bg-primary ui:text-primary-foreground ui:shadow-sm ui:hover:bg-primary/90',
         destructive:
-          'ui-bg-destructive ui-text-destructive-foreground ui-shadow-sm hover:ui-bg-destructive/90',
+          'ui:bg-destructive ui:text-destructive-foreground ui:shadow-xs ui:hover:bg-destructive/90',
         outline:
-          'ui-border ui-border-input ui-bg-background ui-shadow-sm hover:ui-bg-accent hover:ui-text-accent-foreground',
+          'ui:border ui:border-input ui:bg-background ui:shadow-xs ui:hover:bg-accent ui:hover:text-accent-foreground',
         secondary:
-          'ui-bg-secondary ui-text-secondary-foreground ui-shadow-sm hover:ui-bg-secondary/80',
-        ghost: 'hover:ui-bg-accent hover:ui-text-accent-foreground',
-        link: 'ui-text-primary ui-underline-offset-4 hover:ui-underline',
+          'ui:bg-secondary ui:text-secondary-foreground ui:shadow-xs ui:hover:bg-secondary/80',
+        ghost: 'ui:hover:bg-accent ui:hover:text-accent-foreground',
+        link: 'ui:text-primary ui:underline-offset-4 ui:hover:underline',
       },
       size: {
-        default: 'ui-h-8 ui-px-3 ui-py-1',
-        sm: 'ui-h-7 ui-rounded-md ui-px-2 ui-text-xs',
-        lg: 'ui-h-9 ui-rounded-md ui-px-4',
-        icon: 'ui-h-8 ui-w-8 ui-p-0',
+        default: 'ui:h-8 ui:px-3 ui:py-1',
+        sm: 'ui:h-7 ui:rounded-md ui:px-2 ui:text-xs',
+        lg: 'ui:h-9 ui:rounded-md ui:px-4',
+        icon: 'ui:h-8 ui:w-8 ui:p-0',
       },
     },
     defaultVariants: {

@@ -2,6 +2,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
-const merge = extendTailwindMerge({ prefix: 'ui-' });
+const merge = extendTailwindMerge({ prefix: 'ui' });
 
 export const cn = (...classes: ClassValue[]) => merge(clsx(classes));

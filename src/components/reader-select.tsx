@@ -53,7 +53,7 @@ export function ReaderSelect(props: {
           aria-label={props.label}
           data-reader
         >
-          <SelectValue<ReaderChoice> class="ui-truncate">
+          <SelectValue<ReaderChoice> class="ui:truncate">
             {(state) => state.selectedOption().label}
           </SelectValue>
         </SelectTrigger>

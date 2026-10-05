@@ -24,13 +24,13 @@ export function SelectTrigger<T extends ValidComponent = 'button'>(
   return (
     <SelectPrimitive.Trigger
       class={cn(
-        'ui-base ui-flex ui-h-8 ui-w-full ui-items-center ui-justify-between ui-gap-2 ui-rounded-md ui-border ui-border-input ui-bg-background ui-px-2 ui-py-1 ui-text-sm ui-text-foreground ui-shadow-sm ui-outline-none focus-visible:ui-ring-[1.5px] focus-visible:ui-ring-ring disabled:ui-cursor-not-allowed disabled:ui-opacity-50',
+        'ui-base ui:flex ui:h-8 ui:w-full ui:items-center ui:justify-between ui:gap-2 ui:rounded-md ui:border ui:border-input ui:bg-background ui:px-2 ui:py-1 ui:text-sm ui:text-foreground ui:shadow-xs ui:outline-hidden ui:focus-visible:ring-[1.5px] ui:focus-visible:ring-ring ui:disabled:cursor-not-allowed ui:disabled:opacity-50',
         local.class,
       )}
       {...rest}
     >
       {local.children}
-      <SelectPrimitive.Icon class="ui-base ui-flex ui-shrink-0 ui-opacity-50">
+      <SelectPrimitive.Icon class="ui-base ui:flex ui:shrink-0 ui:opacity-50">
         <Icon name="down" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
@@ -45,12 +45,12 @@ export function SelectContent<T extends ValidComponent = 'div'>(
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         class={cn(
-          'ui-base ui-relative ui-z-50 ui-min-w-[8rem] ui-overflow-hidden ui-rounded-md ui-border ui-border-border ui-bg-popover ui-text-popover-foreground ui-shadow-md',
+          'ui-base ui:relative ui:z-50 ui:min-w-[8rem] ui:overflow-hidden ui:rounded-md ui:border ui:border-border ui:bg-popover ui:text-popover-foreground ui:shadow-md',
           local.class,
         )}
         {...rest}
       >
-        <SelectPrimitive.Listbox class="ui-base ui-max-h-[min(20rem,var(--kb-popper-content-available-height))] ui-list-none ui-overflow-y-auto ui-p-1 focus-visible:ui-outline-none" />
+        <SelectPrimitive.Listbox class="ui-base ui:max-h-[min(20rem,var(--kb-popper-content-available-height))] ui:list-none ui:overflow-y-auto ui:p-1 ui:focus-visible:outline-hidden" />
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   );
@@ -65,13 +65,13 @@ export function SelectItem<T extends ValidComponent = 'li'>(
   return (
     <SelectPrimitive.Item
       class={cn(
-        'ui-base ui-relative ui-flex ui-w-full ui-cursor-default ui-select-none ui-items-center ui-rounded-sm ui-py-1.5 ui-pl-2 ui-pr-8 ui-text-sm ui-outline-none data-[highlighted]:ui-bg-accent data-[highlighted]:ui-text-accent-foreground data-[disabled]:ui-pointer-events-none data-[disabled]:ui-opacity-50',
+        'ui-base ui:relative ui:flex ui:w-full ui:cursor-default ui:select-none ui:items-center ui:rounded-sm ui:py-1.5 ui:pl-2 ui:pr-8 ui:text-sm ui:outline-hidden ui:data-[highlighted]:bg-accent ui:data-[highlighted]:text-accent-foreground ui:data-[disabled]:pointer-events-none ui:data-[disabled]:opacity-50',
         local.class,
       )}
       {...rest}
     >
-      <SelectPrimitive.ItemIndicator class="ui-base ui-absolute ui-right-2 ui-flex ui-h-4 ui-w-4 ui-items-center ui-justify-center">
-        <svg aria-hidden="true" viewBox="0 0 24 24" class="ui-h-4 ui-w-4">
+      <SelectPrimitive.ItemIndicator class="ui-base ui:absolute ui:right-2 ui:flex ui:h-4 ui:w-4 ui:items-center ui:justify-center">
+        <svg aria-hidden="true" viewBox="0 0 24 24" class="ui:h-4 ui:w-4">
           <path
             fill="none"
             stroke="currentColor"

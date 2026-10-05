@@ -65,7 +65,7 @@ export function ReaderToolbar(props: {
           variant="ghost"
           size="icon"
           id="outlineToggle"
-          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
+          class="icon-button ui:aria-expanded:bg-accent ui:aria-expanded:text-accent-foreground"
           type="button"
           aria-label="文档目录"
           title="文档目录"
@@ -82,7 +82,7 @@ export function ReaderToolbar(props: {
           variant="ghost"
           size="icon"
           id="searchToggle"
-          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
+          class="icon-button ui:aria-expanded:bg-accent ui:aria-expanded:text-accent-foreground"
           type="button"
           aria-label="搜索文档"
           title={`搜索文档（${props.isMac ? '⌘' : 'Ctrl'} F）`}
@@ -99,7 +99,7 @@ export function ReaderToolbar(props: {
       <Separator
         as="span"
         orientation="vertical"
-        class="divider data-[orientation=vertical]:ui-h-5"
+        class="divider ui:data-[orientation=vertical]:h-5"
         aria-hidden="true"
       />
       <div class="control-group page-controls">
@@ -107,7 +107,7 @@ export function ReaderToolbar(props: {
           variant="ghost"
           size="icon"
           id="previousPage"
-          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
+          class="icon-button ui:aria-expanded:bg-accent ui:aria-expanded:text-accent-foreground"
           type="button"
           aria-label="上一页"
           title="上一页"
@@ -123,7 +123,7 @@ export function ReaderToolbar(props: {
         </Label>
         <NumberInput
           id="pageNumber"
-          class="number-input page-input ui-w-12 ui-px-1"
+          class="number-input page-input ui:w-12 ui:px-1"
           inputmode="numeric"
           disabled={!ready()}
           value={ready() ? String(state()!.page) : '—'}
@@ -146,7 +146,7 @@ export function ReaderToolbar(props: {
           variant="ghost"
           size="icon"
           id="nextPage"
-          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
+          class="icon-button ui:aria-expanded:bg-accent ui:aria-expanded:text-accent-foreground"
           type="button"
           aria-label="下一页"
           title="下一页"
@@ -161,7 +161,7 @@ export function ReaderToolbar(props: {
       <Separator
         as="span"
         orientation="vertical"
-        class="divider data-[orientation=vertical]:ui-h-5"
+        class="divider ui:data-[orientation=vertical]:h-5"
         aria-hidden="true"
       />
       <div class="control-group zoom-controls">
@@ -169,7 +169,7 @@ export function ReaderToolbar(props: {
           variant="ghost"
           size="icon"
           id="zoomOut"
-          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
+          class="icon-button ui:aria-expanded:bg-accent ui:aria-expanded:text-accent-foreground"
           type="button"
           aria-label="缩小"
           title="缩小"
@@ -185,7 +185,7 @@ export function ReaderToolbar(props: {
         </Label>
         <NumberInput
           id="zoomPercent"
-          class="number-input zoom-input ui-w-16 ui-px-1"
+          class="number-input zoom-input ui:w-16 ui:px-1"
           inputmode="decimal"
           disabled={!ready()}
           inputRef={(node) => {
@@ -202,7 +202,7 @@ export function ReaderToolbar(props: {
           variant="ghost"
           size="icon"
           id="zoomIn"
-          class="icon-button aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
+          class="icon-button ui:aria-expanded:bg-accent ui:aria-expanded:text-accent-foreground"
           type="button"
           aria-label="放大"
           title="放大"
@@ -216,7 +216,7 @@ export function ReaderToolbar(props: {
         <ReaderSelect
           id="zoomMode"
           label="缩放方式"
-          class="zoom-select ui-w-[156px]"
+          class="zoom-select ui:w-[156px]"
           disabled={!ready()}
           value={selectedZoom()}
           options={zoomChoices()}
@@ -239,14 +239,14 @@ export function ReaderToolbar(props: {
       <Separator
         as="span"
         orientation="vertical"
-        class="divider data-[orientation=vertical]:ui-h-5"
+        class="divider ui:data-[orientation=vertical]:h-5"
         aria-hidden="true"
       />
       <div class="control-group layout-controls">
         <ReaderSelect
           id="layoutMode"
           label="页面布局"
-          class="ui-w-28"
+          class="ui:w-28"
           disabled={!ready()}
           value={state()?.layout ?? 'horizontal'}
           options={layouts}
@@ -261,7 +261,7 @@ export function ReaderToolbar(props: {
           每行{' '}
           <NumberInput
             id="columns"
-            class="number-input columns-input ui-w-12 ui-px-1"
+            class="number-input columns-input ui:w-12 ui:px-1"
             type="number"
             min={1}
             max={32}
@@ -279,7 +279,7 @@ export function ReaderToolbar(props: {
         <ReaderSelect
           id="scrollInput"
           label="横向滚动方式"
-          class="ui-w-32"
+          class="ui:w-32"
           title="横向滚动方式：自动判断鼠标或触控板，也可手动选择"
           disabled={!ready()}
           hidden={!!state() && state()!.layout !== 'horizontal'}

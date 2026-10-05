@@ -20,7 +20,7 @@ export const Separator = <T extends ValidComponent = 'hr'>(
     <SeparatorPrimitive
       class={cn(
         'ui-base',
-        'ui-m-0 ui-border-0 ui-shrink-0 ui-bg-border data-[orientation=horizontal]:ui-h-[1px] data-[orientation=vertical]:ui-h-full data-[orientation=horizontal]:ui-w-full data-[orientation=vertical]:ui-w-[1px]',
+        'ui:m-0 ui:border-0 ui:shrink-0 ui:bg-border ui:data-[orientation=horizontal]:h-[1px] ui:data-[orientation=vertical]:h-full ui:data-[orientation=horizontal]:w-full ui:data-[orientation=vertical]:w-[1px]',
         local.class,
       )}
       {...rest}

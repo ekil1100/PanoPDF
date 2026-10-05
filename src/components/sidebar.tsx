@@ -110,7 +110,7 @@ export function Sidebar(props: {
                     <Button
                       variant="ghost"
                       size="icon"
-                      class="icon-button outline-disclosure ui-w-6 ui-p-1 aria-expanded:ui-bg-accent aria-expanded:ui-text-accent-foreground"
+                      class="icon-button outline-disclosure ui:w-6 ui:p-1 ui:aria-expanded:bg-accent ui:aria-expanded:text-accent-foreground"
                       type="button"
                       aria-label={`${expanded() ? '收起' : '展开'}“${label}”`}
                       aria-expanded={expanded()}
@@ -123,7 +123,7 @@ export function Sidebar(props: {
                   <Button
                     variant="ghost"
                     type="button"
-                    class="outline-link ui-h-auto ui-whitespace-normal ui-justify-start ui-text-left ui-px-2 ui-py-1.5 ui-leading-normal"
+                    class="outline-link ui:h-auto ui:whitespace-normal ui:justify-start ui:text-left ui:px-2 ui:py-1.5 ui:leading-normal"
                     disabled={entry.target === null || entry.target === undefined}
                     onClick={() => {
                       if (!ready()) return;
@@ -153,7 +153,7 @@ export function Sidebar(props: {
   return (
     <aside id="sidebar" class="reader-sidebar" aria-label="文档导航" hidden={!props.panel}>
       <Tabs
-        class="ui-flex ui-min-h-0 ui-flex-1 ui-flex-col"
+        class="ui:flex ui:min-h-0 ui:flex-1 ui:flex-col"
         value={props.panel ?? 'outline'}
         onChange={(value) => {
           if (value !== 'outline' && value !== 'search') return;
@@ -202,7 +202,7 @@ export function Sidebar(props: {
           value="outline"
           forceMount
           id="outlinePanel"
-          class="panel-content ui-px-2 ui-py-3"
+          class="panel-content ui:px-2 ui:py-3"
           hidden={props.panel !== 'outline'}
         >
           <p id="outlineEmpty" class="muted panel-message" hidden={props.state.outline.length > 0}>
@@ -216,7 +216,7 @@ export function Sidebar(props: {
           value="search"
           forceMount
           id="searchPanel"
-          class="panel-content ui-px-3 ui-py-4"
+          class="panel-content ui:px-3 ui:py-4"
           hidden={props.panel !== 'search'}
         >
           <Label class="field-label" for="searchQuery">

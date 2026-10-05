@@ -7,12 +7,12 @@ import { splitProps, type ComponentProps, type ValidComponent } from 'solid-js';
 import { cn } from '../../lib/cn';
 
 const alertVariants = cva(
-  'ui-base ui-relative ui-w-full ui-rounded-lg ui-border ui-px-4 ui-py-3 ui-text-sm',
+  'ui-base ui:relative ui:w-full ui:rounded-lg ui:border ui:px-4 ui:py-3 ui:text-sm',
   {
     variants: {
       variant: {
-        default: 'ui-border-border ui-bg-background ui-text-foreground',
-        destructive: 'ui-border-destructive/50 ui-bg-background ui-text-destructive',
+        default: 'ui:border-border ui:bg-background ui:text-foreground',
+        destructive: 'ui:border-destructive/50 ui:bg-background ui:text-destructive',
       },
     },
     defaultVariants: { variant: 'default' },
@@ -28,5 +28,5 @@ export function Alert<T extends ValidComponent = 'div'>(props: PolymorphicProps<
 }
 export function AlertDescription(props: ComponentProps<'div'>) {
   const [local, rest] = splitProps(props, ['class']);
-  return <div class={cn('ui-base ui-text-sm ui-leading-relaxed', local.class)} {...rest} />;
+  return <div class={cn('ui-base ui:text-sm ui:leading-relaxed', local.class)} {...rest} />;
 }

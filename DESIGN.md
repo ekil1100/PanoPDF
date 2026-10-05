@@ -234,7 +234,7 @@ Sidecar 中的八阶色带仅用于设计面板色样预览，按现有颜色合
 
 ### 组件实现
 
-按钮、输入框、Select 下拉选择器、Tabs 导航、Alert 提示、Progress 进度、Label 标签、分隔线与密码弹窗采用本地 shadcn-solid 源码组件。欢迎页另用本地 Solid 组件实现 shadcn 的 Empty 和 Kbd 组合模式。Kobalte 管理选择器、Tabs 与弹窗的焦点、键盘及可访问性行为。Select 打开时保持悬浮工具栏可见，关闭后恢复焦点；自定义缩放项转到缩放输入框。Tabs 保留未选中面板的 DOM 和搜索草稿。加载进度使用不确定状态，不显示虚构百分比，并遵循减少动态效果设置。Tailwind 使用 `ui-` 前缀和 `--ui-*` 主题变量，关闭 preflight；全局重置仅作用于显式标记的 `.ui-base`，PDF.js 页面保持自己的样式。页码、缩放与列数仍通过现有草稿逻辑提交，保留输入法组合输入行为。
+按钮、输入框、Select 下拉选择器、Tabs 导航、Alert 提示、Progress 进度、Label 标签、分隔线与密码弹窗采用本地 shadcn-solid 源码组件。欢迎页另用本地 Solid 组件实现 shadcn 的 Empty 和 Kbd 组合模式。Kobalte 管理选择器、Tabs 与弹窗的焦点、键盘及可访问性行为。Select 打开时保持悬浮工具栏可见，关闭后恢复焦点；自定义缩放项转到缩放输入框。Tabs 保留未选中面板的 DOM 和搜索草稿。加载进度使用不确定状态，不显示虚构百分比，并遵循减少动态效果设置。Tailwind CSS 4 使用 `ui:` 前缀和 `--ui-*` 主题变量，主题配置位于 `src/ui.css`，通过 Vite 插件构建且不导入 Preflight；控件重置仅作用于显式标记的 `.ui-base`，PDF.js 页面保持自己的样式。页码、缩放与列数仍通过现有草稿逻辑提交，保留输入法组合输入行为。
 
 ### 阅读面与状态栏
 

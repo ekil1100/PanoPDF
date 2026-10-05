@@ -3,7 +3,7 @@ import { splitProps, type ComponentProps } from 'solid-js';
 import { cn } from '../../lib/cn';
 
 export const inputStyles =
-  'ui-flex ui-h-8 ui-w-full ui-rounded-md ui-border ui-border-input ui-bg-background ui-text-foreground ui-px-2 ui-py-1 ui-text-sm ui-shadow-sm ui-transition-shadow file:ui-border-0 file:ui-bg-transparent file:ui-text-sm file:ui-font-medium placeholder:ui-text-muted-foreground focus-visible:ui-outline-none focus-visible:ui-ring-[1.5px] focus-visible:ui-ring-ring aria-[invalid=true]:ui-border-destructive disabled:ui-cursor-not-allowed disabled:ui-opacity-50';
+  'ui:flex ui:h-8 ui:w-full ui:rounded-md ui:border ui:border-input ui:bg-background ui:text-foreground ui:px-2 ui:py-1 ui:text-sm ui:shadow-xs ui:transition-shadow ui:file:border-0 ui:file:bg-transparent ui:file:text-sm ui:file:font-medium ui:placeholder:text-muted-foreground ui:focus-visible:outline-hidden ui:focus-visible:ring-[1.5px] ui:focus-visible:ring-ring ui:aria-[invalid=true]:border-destructive ui:disabled:cursor-not-allowed ui:disabled:opacity-50';
 
 export type InputProps = ComponentProps<'input'>;
 

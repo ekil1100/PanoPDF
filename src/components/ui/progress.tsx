@@ -14,12 +14,12 @@ export function Progress<T extends ValidComponent = 'div'>(
   const [local, rest] = splitProps(props as ProgressProps, ['class', 'children']);
   return (
     <ProgressPrimitive
-      class={cn('ui-base ui-flex ui-w-full ui-flex-col ui-gap-2', local.class)}
+      class={cn('ui-base ui:flex ui:w-full ui:flex-col ui:gap-2', local.class)}
       {...rest}
     >
       {local.children}
-      <ProgressPrimitive.Track class="ui-base ui-h-1 ui-overflow-hidden ui-rounded-full ui-bg-primary/20">
-        <ProgressPrimitive.Fill class="ui-base ui-h-full ui-w-[var(--kb-progress-fill-width)] ui-bg-primary data-[indeterminate]:ui-w-1/3 data-[indeterminate]:ui-animate-reader-progress motion-reduce:ui-animate-none" />
+      <ProgressPrimitive.Track class="ui-base ui:h-1 ui:overflow-hidden ui:rounded-full ui:bg-primary/20">
+        <ProgressPrimitive.Fill class="ui-base ui:h-full ui:w-[var(--kb-progress-fill-width)] ui:bg-primary ui:data-[indeterminate]:w-1/3 ui:data-[indeterminate]:animate-reader-progress ui:motion-reduce:animate-none" />
       </ProgressPrimitive.Track>
     </ProgressPrimitive>
   );

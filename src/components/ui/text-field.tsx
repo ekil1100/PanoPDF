@@ -24,21 +24,21 @@ export const TextFieldRoot = <T extends ValidComponent = 'div'>(
 ) => {
   const [local, rest] = splitProps(props as textFieldProps, ['class']);
 
-  return <TextFieldPrimitive class={cn('ui-base', 'ui-space-y-1', local.class)} {...rest} />;
+  return <TextFieldPrimitive class={cn('ui-base', 'ui:space-y-1', local.class)} {...rest} />;
 };
 
 export const textfieldLabel = cva(
-  'ui-text-sm data-[disabled]:ui-cursor-not-allowed data-[disabled]:ui-opacity-70 ui-font-medium',
+  'ui:text-sm ui:data-[disabled]:cursor-not-allowed ui:data-[disabled]:opacity-70 ui:font-medium',
   {
     variants: {
       label: {
-        true: 'data-[invalid]:ui-text-destructive',
+        true: 'ui:data-[invalid]:text-destructive',
       },
       error: {
-        true: 'ui-text-destructive ui-text-xs',
+        true: 'ui:text-destructive ui:text-xs',
       },
       description: {
-        true: 'ui-font-normal ui-text-muted-foreground',
+        true: 'ui:font-normal ui:text-muted-foreground',
       },
     },
     defaultVariants: {

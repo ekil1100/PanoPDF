@@ -1,4 +1,53 @@
-/* No Tailwind base layer: preflight and universal variable resets stay out of PDF.js. */
+/* Import utilities without global Preflight rules for PDF.js. */
+@layer theme;
+@import 'tailwindcss/theme.css' layer(theme) prefix(ui);
+/* Keep important utilities in the same cascade layer as existing native-control rules. */
+@import 'tailwindcss/utilities.css' prefix(ui) important source(none);
+@source './**/*.{ts,tsx}';
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  --text-sm: 13px;
+  --text-sm--line-height: 20px;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --radius-sm: 2px;
+  --radius-lg: 6px;
+  --animate-reader-progress: reader-progress 1.2s ease-in-out infinite;
+
+  @keyframes reader-progress {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(300%);
+    }
+  }
+}
+
+@theme inline {
+  --radius-md: var(--ui-radius);
+  --color-background: hsl(var(--ui-background));
+  --color-foreground: hsl(var(--ui-foreground));
+  --color-border: hsl(var(--ui-border));
+  --color-input: hsl(var(--ui-input));
+  --color-ring: hsl(var(--ui-ring));
+  --color-primary: hsl(var(--ui-primary));
+  --color-primary-foreground: hsl(var(--ui-primary-foreground));
+  --color-secondary: hsl(var(--ui-secondary));
+  --color-secondary-foreground: hsl(var(--ui-secondary-foreground));
+  --color-destructive: hsl(var(--ui-destructive));
+  --color-destructive-foreground: hsl(var(--ui-destructive-foreground));
+  --color-muted: hsl(var(--ui-muted));
+  --color-muted-foreground: hsl(var(--ui-muted-foreground));
+  --color-accent: hsl(var(--ui-accent));
+  --color-accent-foreground: hsl(var(--ui-accent-foreground));
+  --color-popover: hsl(var(--ui-popover));
+  --color-popover-foreground: hsl(var(--ui-popover-foreground));
+}
+
 :root {
   --ui-background: 0 0% 100%;
   --ui-foreground: 220 14% 16%;
@@ -33,24 +82,7 @@
   font-family: var(--ui-font);
   font-size: 13px;
   line-height: 20px;
-  --tw-translate-x: 0;
-  --tw-translate-y: 0;
-  --tw-rotate: 0;
-  --tw-skew-x: 0;
-  --tw-skew-y: 0;
-  --tw-scale-x: 1;
-  --tw-scale-y: 1;
-  --tw-ring-inset: ;
-  --tw-ring-offset-width: 0px;
-  --tw-ring-offset-color: #fff;
-  --tw-ring-color: hsl(var(--ui-ring));
-  --tw-ring-offset-shadow: 0 0 #0000;
-  --tw-ring-shadow: 0 0 #0000;
-  --tw-shadow: 0 0 #0000;
-  --tw-shadow-colored: 0 0 #0000;
 }
-
-@tailwind utilities;
 
 .ui-base[hidden] {
   display: none !important;

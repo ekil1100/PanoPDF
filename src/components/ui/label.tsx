@@ -6,6 +6,6 @@ import { cn } from '../../lib/cn';
 export function Label(props: ComponentProps<'label'>) {
   const [local, rest] = splitProps(props, ['class']);
   return (
-    <label class={cn('ui-base ui-text-sm ui-font-medium ui-leading-none', local.class)} {...rest} />
+    <label class={cn('ui-base ui:text-sm ui:font-medium ui:leading-none', local.class)} {...rest} />
   );
 }

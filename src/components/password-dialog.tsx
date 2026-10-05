@@ -44,7 +44,7 @@ export function PasswordDialog(props: {
     >
       <DialogContent
         id="passwordDialog"
-        class="ui-max-w-[min(400px,calc(100vw-48px))] ui-p-6"
+        class="ui:max-w-[min(400px,calc(100vw-48px))] ui:p-6"
         onOpenAutoFocus={(event) => {
           event.preventDefault();
           input?.focus();
@@ -65,7 +65,7 @@ export function PasswordDialog(props: {
           }}
         >
           <DialogTitle id="passwordTitle">此 PDF 需要密码</DialogTitle>
-          <DialogDescription id="passwordDescription" class="ui-mt-2 ui-mb-5">
+          <DialogDescription id="passwordDescription" class="ui:mt-2 ui:mb-5">
             输入文档密码以继续打开。
           </DialogDescription>
           <Label class="field-label" for="passwordInput">
@@ -89,7 +89,7 @@ export function PasswordDialog(props: {
           <Alert
             id="passwordError"
             variant="destructive"
-            class="ui-mt-2 ui-border-0 ui-p-0"
+            class="ui:mt-2 ui:border-0 ui:p-0"
             hidden={!invalid()}
           >
             <AlertDescription>密码不正确，请重试。</AlertDescription>

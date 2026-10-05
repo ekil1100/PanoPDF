@@ -345,10 +345,10 @@ function Application(props: {
       <Alert
         id="notice"
         variant="destructive"
-        class="notice ui-flex ui-items-center ui-gap-3 ui-rounded-none ui-border-x-0 ui-border-t-0 ui-px-3 ui-py-1"
+        class="notice ui:flex ui:items-center ui:gap-3 ui:rounded-none ui:border-x-0 ui:border-t-0 ui:px-3 ui:py-1"
         hidden={!state().notice}
       >
-        <AlertDescription id="noticeText" class="ui-flex-1">
+        <AlertDescription id="noticeText" class="ui:flex-1">
           {state().notice}
         </AlertDescription>
         <Button
@@ -429,7 +429,7 @@ function Application(props: {
             <p id="loadingFilename" class="muted">
               {state().activeFile?.name ?? ''}
             </p>
-            <Progress indeterminate class="ui-w-[180px] ui-my-1" aria-label="正在读取文档" />
+            <Progress indeterminate class="ui:w-[180px] ui:my-1" aria-label="正在读取文档" />
             <p class="muted">大型文档可能需要稍等片刻。</p>
           </section>
           <section
@@ -439,7 +439,7 @@ function Application(props: {
             hidden={state().phase !== 'error'}
           >
             <h2 id="errorTitle">无法打开 PDF</h2>
-            <Alert id="errorMessage" variant="destructive" class="ui-w-auto ui-max-w-[56ch]">
+            <Alert id="errorMessage" variant="destructive" class="ui:w-auto ui:max-w-[56ch]">
               <AlertDescription>{state().error}</AlertDescription>
             </Alert>
             <div class="state-actions">

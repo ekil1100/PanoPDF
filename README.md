@@ -33,7 +33,7 @@ bun run dist         # Build and package for the current platform
 - `src/main.tsx`：挂载入口、样式与热更新清理。
 - `src/app.tsx`、`src/components/`：Solid 界面、输入草稿、焦点、搜索和稳定阅读宿主。
 - `src/components/ui/`：本地维护的 shadcn-solid 源码组件；来源与 MIT 授权见 [授权说明](licenses/shadcn-solid.md)。
-- `src/ui.css`、`tailwind.config.ts`：界面主题、`ui-` 前缀工具类与 `--ui-*` 颜色变量；关闭 preflight，避免覆盖 PDF.js 页面、表单和文本层。
+- `src/ui.css`：Tailwind CSS 4.3.3 的 CSS 主题配置、`ui:` 前缀工具类与 `--ui-*` 颜色变量；通过 `@tailwindcss/vite` 构建，仅导入主题和工具类，避免 Preflight 覆盖 PDF.js 页面、表单和文本层。
 - `src/app-controller.ts`：Effect 应用程序与 Solid 互操作入口，管理文件身份、启动、打开/关闭、位置保存、密码请求和实例 Scope。
 - `src/app-effects.ts`：类型化错误、Promise 适配、严格 FIFO 的有序 Fiber 和外部等待中断。
 - `src/reader.ts`、`src/reader-layout.ts`：原有 PDF.js 阅读器与布局/滚轮算法。

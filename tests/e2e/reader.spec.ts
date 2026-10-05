@@ -487,10 +487,18 @@ test('welcome screen keeps only the dropzone, shortcut and recent files across l
   });
   await expect(page.locator('#welcomeDropzone')).toHaveAttribute('data-dragging', 'true');
   await expect(page.locator('#dropOverlay')).toBeHidden();
-  await expect(page.locator('#welcomeDropzone')).toHaveCSS(
-    'background-color',
-    'rgba(39, 43, 51, 0.05)',
-  );
+  const dropzoneColors = await page.locator('#welcomeDropzone').evaluate((node) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 1;
+    const context = canvas.getContext('2d')!;
+    context.fillStyle = getComputedStyle(node).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    context.fillStyle = 'rgba(39, 43, 51, 0.05)';
+    context.fillRect(1, 0, 1, 1);
+    return Array.from(context.getImageData(0, 0, 2, 1).data);
+  });
+  expect(dropzoneColors.slice(0, 4)).toEqual(dropzoneColors.slice(4));
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
   await expect(page.locator('#welcomeDropzone')).not.toHaveAttribute('data-dragging', 'true');
   await expect(page.locator('#readerToolbar')).toBeHidden();
